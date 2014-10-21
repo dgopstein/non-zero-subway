@@ -5,7 +5,7 @@ import Subway._
 
 object CarParser {
   def parse(carFile: java.io.File): Car = parse(io.Source.fromFile(carFile).mkString)
-  def parse(carFile: String): Car = Car(parsePlan(parseSections(carFile)("Class")))
+  def parse(carFile: String): Car = Car(parsePlan(parseSections(carFile)("Plan")))
 
   val charToSpot = Map[Char, Spot](
     'R' -> Seat(Forward),
