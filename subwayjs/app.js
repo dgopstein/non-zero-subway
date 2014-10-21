@@ -16,7 +16,7 @@ var DB_INFO = {
         database:'subway'
       }
 
-console.log("DB_INFO: "+JSON.stringify(DB_INFO));
+//console.log("DB_INFO: "+JSON.stringify(DB_INFO));
 
 app.use(connection(mysql, DB_INFO,'request'));
 
@@ -30,14 +30,35 @@ app.use(connection(mysql, DB_INFO,'request'));
 
 app.use("/", express.static(__dirname + '/static'));
 
+function withLookupRows(callback) {
+  var connection = mysql.createConnection(DB_INFO);
+  connection.connect();
+  connection.query('SELECT * FROM LOOKUP_TBL',function(err,rows) {
+      if(err) console.log("Error Selecting : %s ",err );
+      callback(rows);
+  });
+}
+
+function buildFloorPlan(rows, callback) {
+  var plans = {};
+
+  for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var plan = (plans[row['Car_Class']] = plans[row['Car_Class']] || {});
+      plan[row['Space']] = row['Position'];
+  }
+
+  callback(plans);
+}
+
+
 app.get('/R68', function(req, res){
-      req.getConnection(function(err,connection){
-          connection.query('SELECT * FROM LOOKUP_TBL',function(err,rows) {
-              if(err) console.log("Error Selecting : %s ",err );
-              res.render('customers',{page_title:"Customers - Node.js",data:rows});
-              console.log(rows);
-          });
-      });
+  withLookupRows(function(rows) {
+      buildFloorPlan(rows, function(plans) {
+          console.log("plan R68: \n", plans);
+          res.send(plans);
+      })
+   })
 });
 
 var server = app.listen(4000, function() {
