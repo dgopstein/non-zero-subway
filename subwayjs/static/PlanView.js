@@ -9,7 +9,7 @@ function removeElem(arr, elem) {
 function getCarPlan(carClass) {
     console.log("getting car plan");
     var plans;
-    $.get("/R68", function(res) {
+    $.get("/db/LOOKUP_TBL.csv", function(res) {
       console.log(res);
       //var r68 = JSON.parse(res);
       plans = res;
