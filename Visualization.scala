@@ -46,23 +46,6 @@ object Visualization {
     }
   }
 
-//  class DisplayFrame(plan: Seq[Seq[Spot]]) extends javax.swing.JFrame {
-//    this.setSize(carWidth(plan)+50, carHeight(plan)+50); //The window Dimensions
-//    setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-//    val panel = new javax.swing.JPanel();
-    //panel.setBounds(0, 0, 600, 600);
-//    val sketch = new CircleSketch(plan);
-//    panel.add(sketch)
-//    this.add(panel, BorderLayout.WEST);
-//    sketch.init(); //this is the function used to start the execution of the sketch
-//    this.setVisible(true);
-//  }
-
-  //  def draw(plan: Seq[Seq[Spot]]) {
-  //    new DisplayFrame(plan).setVisible(true);
-  //  }
-
   class ExampleFrame(plan: Seq[Seq[Spot]]) extends Frame("Embedded Applet") {
     setLayout(new BorderLayout());
 
@@ -86,4 +69,11 @@ object Visualization {
   def draw(plan: Seq[Seq[Spot]]) {
     new ExampleFrame(plan).setVisible(true);
   }
+
+  def main(args: Array[String]) {
+    val R68 = subway.CarParser.parse(new java.io.File(args.head))
+    draw(R68.footprint)
+  }
 }
+
+//scala -classpath '.:target/scala-2.10/classes/:lib/core.jar' Visualization R68.txt
