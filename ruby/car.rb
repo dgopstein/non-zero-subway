@@ -2,6 +2,7 @@ require 'csv'
 require 'ruby-processing'
 
 require 'csv_importer.rb'
+require 'passenger.rb'
 
 Processing::App::SKETCH_PATH = __FILE__
 
@@ -122,3 +123,16 @@ end
 #end
 
 #MySketch.new(x: 10, y: 30)
+
+def main
+  db_dir = '/Users/dgopstein/nyu/subway/db/'
+  cars = CarImporter.new(db_dir+'LOOKUP_TBL.csv').cars
+  stops = StopImporter.new(db_dir+'FORM_TBL.csv').stops
+  passengers = PassengerImporter.new(db_dir+'RECORDS.csv').passengers
+
+  stop = stops.find{|s| s.id == 1}
+
+  car_vis = CarVisualizer.new(cars[stop.car_class])
+
+  #car_vis.draw_passengers(passengers.select{|p| p.form_id == stop.id})
+end
