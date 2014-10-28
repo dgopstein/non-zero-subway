@@ -57,13 +57,13 @@ class CarVisualizer < Processing::App
 #  Class.new(Processing::App) do
   def initialize(car)
     @car = car
-    @seat_size = 10
-    super(x: 20, y: 30)
+    @seat_size = 20
+    super(x: 20, y: 30) # what does this mean?
   end
 
   def setup
-    size @car.width*@seat_size, @car.height*@seat_size
-    background 0
+    size (@car.width+1)*@seat_size, (@car.height+1)*@seat_size
+    background 255
     smooth
   end
   
@@ -75,11 +75,15 @@ class CarVisualizer < Processing::App
         if record
           if record.pole > 0
             fill 102, 255, 18
-            rect(x, y, @seat_size/4, @seat_size/4)
+            rect(x, y, @seat_size/2, @seat_size/2)
           elsif record.position > 0
             fill 255, 102, 18
             rect(x, y, @seat_size*2, @seat_size*2)
           end
+          fill 0, 0, 0
+          f = createFont("Arial",16,true)
+          textFont(f, 11)
+          text(record.space, x, y+@seat_size)
         end
       end
     end

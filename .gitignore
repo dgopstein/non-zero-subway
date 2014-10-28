@@ -1,5 +1,6 @@
 *.class
 *.log
+*.swp
 lib
 node_modules
 .DS_Store
