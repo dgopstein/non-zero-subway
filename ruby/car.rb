@@ -1,5 +1,8 @@
 require 'csv'
 require 'ruby-processing'
+
+require 'csv_importer.rb'
+
 Processing::App::SKETCH_PATH = __FILE__
 
 
@@ -22,12 +25,13 @@ end
 
 Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule)
 
-class CarCsvImporter
-  attr_accessor :csv, :cars
+class CarImporter
+  include CsvImporter
+
+  attr_accessor :cars
 
   def initialize(filename)
-    @filename = filename
-    @csv = CSV.open(filename, 'r', headers: false, converters: :numeric)
+    super(filename)
     @cars = parse_csv(@csv)
   end
 
@@ -40,10 +44,11 @@ class CarCsvImporter
     csv.drop(1).each_with_object({}) do |row, cars|
       space = Space.new(*row.to_a)
 
+      #TODO this isn't parsing and should probs live somewhere else
       car = (cars[space.car_class] ||= Car.new(space.car_class))
 
       # split a spot description e.g., '10d' into its vertical and horizontal components, [10, d]
-      space_col, space_row = CarCsvImporter.parse_space(space.space)
+      space_col, space_row = CarImporter.parse_space(space.space)
 
       car_col = (car.plan[space_col] ||= [])
 
