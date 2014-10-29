@@ -16,7 +16,7 @@ class Car
   end
 
   def height
-    plan.first.size
+    plan.map{|x| x.ergo.size || 0 }.max
   end
 
   def width
@@ -25,6 +25,11 @@ class Car
 end
 
 Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule)
+
+def parse_space(str)
+  space_col, space_row = str.match(/([0-9.]+)(\w+)/).captures
+  [2*(space_col.to_f - 1), 2*(space_row.downcase.ord - 'a'.ord)]
+end
 
 class CarImporter
   include CsvImporter
@@ -36,11 +41,6 @@ class CarImporter
     @cars = parse_csv(@csv)
   end
 
-  def self.parse_space(str)
-    space_col, space_row = str.match(/([0-9.]+)(\w+)/).captures
-    [2*(space_col.to_f - 1), 2*(space_row.downcase.ord - 'a'.ord)]
-  end
-
   def parse_csv(csv)
     csv.drop(1).each_with_object({}) do |row, cars|
       space = Space.new(*row.to_a)
@@ -49,7 +49,7 @@ class CarImporter
       car = (cars[space.car_class] ||= Car.new(space.car_class))
 
       # split a spot description e.g., '10d' into its vertical and horizontal components, [10, d]
-      space_col, space_row = CarImporter.parse_space(space.space)
+      space_col, space_row = parse_space(space.space)
 
       car_col = (car.plan[space_col] ||= [])
 
@@ -60,15 +60,18 @@ end
 
 
 class CarVisualizer < Processing::App
-#  Class.new(Processing::App) do
-  def initialize(car)
+  attr_accessor :passengers
+
+  def initialize(car, passengers = [])
     @car = car
-    @seat_size = 20
+    @seat_size = 40
+    @passengers = passengers
     super(x: 20, y: 30) # what does this mean?
   end
 
   def setup
-    size (@car.width+1)*@seat_size, (@car.height+1)*@seat_size
+    size (@car.width+1)*@seat_size/2.0,
+         (@car.height+1)*@seat_size/2.0
     background 255
     smooth
   end
@@ -76,15 +79,17 @@ class CarVisualizer < Processing::App
   def draw
     @car.plan.each_with_index do |col, col_num|
       col and col.each_with_index do |record, row_num|
-        x = col_num*@seat_size
-        y = row_num*@seat_size
+        x = col_num*@seat_size/2.0
+        y = row_num*@seat_size/2.0
         if record
           if record.pole > 0
             fill 102, 255, 18
-            rect(x, y, @seat_size/2, @seat_size/2)
+            rect(*space_to_xy(col_num, row_num),
+                 @seat_size/4,
+                 @seat_size/4)
           elsif record.position > 0
             fill 255, 102, 18
-            rect(x, y, @seat_size*2, @seat_size*2)
+            rect(x, y, @seat_size, @seat_size)
           end
           fill 0, 0, 0
           f = createFont("Arial",16,true)
@@ -93,46 +98,35 @@ class CarVisualizer < Processing::App
         end
       end
     end
+    draw_passengers(@passengers)
+  end
+
+  def space_to_xy(col, row)
+    scale = @seat_size/2.0
+    offset = (3/8.0)*@seat_size
+    [col*scale + offset,
+     row*scale + offset]
+     
+  end
+
+  def draw_passengers(passengers)
+    fill 18, 102, 255
+    passengers.each do |passenger|
+      col, row = parse_space(passenger.space)
+      ellipse(*space_to_xy(col, row), @seat_size/2.0, @seat_size/2.0)
+    end
   end
 end
-#class CarVisualizer < Processing::App
-#  def self.seat_size; 20; end
-#  def self.draw(car)
-#
-#    c = Class.new(Processing::App) do
-#      def setup
-#        size car.width*CarVisualizer.seat_size, car.height*CarVisualizer.seat_size
-#        background 0
-#        smooth
-#      end
-#    
-#      def draw
-#        car.each do |col|
-#          col.each do |row|
-#            fill 255, 102, 18
-#            x = col*CarVisualizer.seat_size
-#            y = row*CarVisualizer.seat_size
-#            rectangle x, y, CarVisualizer.seat_size, CarVisualizer.seat_size
-#          end
-#        end
-#      end
-#    end
-#
-#    c.new(x: 0, y: 0)
-#  end
-#end
-
-#MySketch.new(x: 10, y: 30)
 
 def main
   db_dir = '/Users/dgopstein/nyu/subway/db/'
-  cars = CarImporter.new(db_dir+'LOOKUP_TBL.csv').cars
-  stops = StopImporter.new(db_dir+'FORM_TBL.csv').stops
-  passengers = PassengerImporter.new(db_dir+'RECORDS.csv').passengers
+  ci = CarImporter.new(db_dir+'LOOKUP_TBL.csv')
+  si = StopImporter.new(db_dir+'FORM_TBL.csv')
+  pi = PassengerImporter.new(db_dir+'RECORDS.csv')
 
-  stop = stops.find{|s| s.id == 1}
+  stop = si.stops.find{|s| s.id == 1}
 
-  car_vis = CarVisualizer.new(cars[stop.car_class])
+  car_vis = CarVisualizer.new(ci.cars[stop.car_class], pi.by_form_id(stop.id))
 
-  #car_vis.draw_passengers(passengers.select{|p| p.form_id == stop.id})
+  [car_vis, si, pi]
 end
