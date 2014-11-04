@@ -103,6 +103,13 @@ class CarVisualizer < Processing::App
           elsif record.position > 0 # Seat
             fill 255, 102, 18
             rect(x, y, @seat_size, @seat_size)
+
+            if record.seat_pole > 0
+              fill 102, 255, 18
+              rect(*space_to_xy(col_num, row_num),
+                   @seat_size/4,
+                   @seat_size/4)
+            end
           end
           fill 0, 0, 0
           f = createFont("Arial",16,true)
@@ -151,21 +158,9 @@ def main
   si = StopImporter.new(db_dir+'FORM_TBL.csv')
   pi = PassengerImporter.new(db_dir+'RECORDS.csv')
 
-  stop = si.stops.find{|s| s.id == 1}
+  stops = si.stops.select{|s| s.car_class.starts_with?('R160')}
 
-  trips = si.trips
-
-  trip = trips["C"].first
-
-  car_vis = CarVisualizer.new(ci.cars[stop.car_class], trip.map{|s| pi.by_stop[s.id]})
-
-
-  #trips.deep_each do |k, stop|
-  #  sleep 1
-  #  puts "stop.id: #{stop.id}"
-  #  stop.car_class
-  #  car_vis.reinit(ci.cars[stop.car_class], pi.by_form_id(stop.id))
-  #end
+  car_vis = CarVisualizer.new(ci.cars['R160b'], [[]])
 
   [car_vis, si, pi, trips]
 end
