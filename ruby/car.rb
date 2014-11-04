@@ -58,16 +58,23 @@ class CarImporter
   end
 end
 
-
 class CarVisualizer < Processing::App
-  attr_accessor :passengers
+  attr_accessor :passengers_by_stop, :stop
 
-  def initialize(car, passengers = [])
+  def initialize(car, passengers_by_stop = [])
+    @stop = 0
     @car = car
     @seat_size = 40
-    @passengers = passengers
+    @passengers_by_stop = passengers_by_stop
     super(x: 20, y: 30) # what does this mean?
   end
+
+  #def reinit(car, passengers)
+  #  @car = car
+  #  @passengers = passengers
+  #  size (@car.width+1)*@seat_size/2.0,
+  #       (@car.height+1)*@seat_size/2.0
+  #end
 
   def setup
     size (@car.width+1)*@seat_size/2.0,
@@ -81,13 +88,19 @@ class CarVisualizer < Processing::App
       col and col.each_with_index do |record, row_num|
         x = col_num*@seat_size/2.0
         y = row_num*@seat_size/2.0
+          
+        # clear background
+        if (col_num.even? && row_num.even?)
+          fill 255, 255, 255
+          rect(x, y, @seat_size, @seat_size)
+        end
         if record
-          if record.pole > 0
+          if record.pole > 0 # Stanchion
             fill 102, 255, 18
             rect(*space_to_xy(col_num, row_num),
                  @seat_size/4,
                  @seat_size/4)
-          elsif record.position > 0
+          elsif record.position > 0 # Seat
             fill 255, 102, 18
             rect(x, y, @seat_size, @seat_size)
           end
@@ -98,7 +111,21 @@ class CarVisualizer < Processing::App
         end
       end
     end
-    draw_passengers(@passengers)
+    draw_passengers(@passengers_by_stop[@stop])
+
+  end
+  def key_pressed
+    puts "key_pressed: "+[key, keyCode].inspect
+    if key == CODED
+      case keyCode
+      when 37 # <
+      @stop = [@stop - 1, 0].max
+      #when 38 # ^
+      when 39 # >
+      @stop = [@stop + 1, @passengers_by_stop.size - 1].min
+      #when 40 # v
+      end
+    end
   end
 
   def space_to_xy(col, row)
@@ -126,7 +153,19 @@ def main
 
   stop = si.stops.find{|s| s.id == 1}
 
-  car_vis = CarVisualizer.new(ci.cars[stop.car_class], pi.by_form_id(stop.id))
+  trips = si.trips
 
-  [car_vis, si, pi]
+  trip = trips["C"].first
+
+  car_vis = CarVisualizer.new(ci.cars[stop.car_class], trip.map{|s| pi.by_stop[s.id]})
+
+
+  #trips.deep_each do |k, stop|
+  #  sleep 1
+  #  puts "stop.id: #{stop.id}"
+  #  stop.car_class
+  #  car_vis.reinit(ci.cars[stop.car_class], pi.by_form_id(stop.id))
+  #end
+
+  [car_vis, si, pi, trips]
 end

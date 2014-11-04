@@ -16,7 +16,12 @@ class PassengerImporter
     end
   end
 
-  def by_form_id(id)
-    passengers.select{|p| p.form_id == id}
+  def by_stop
+    passengers.group_by{|p| p.form_id}
   end
+
+  def by_form_id(id)
+    by_stop[id]
+  end
+
 end
