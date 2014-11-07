@@ -101,7 +101,7 @@ end
 
 # The probability that a certain type of seat (seat by door, middle seat, standing by stanchion)
 # will be occupied at any given time
-# TODO this should be normalized by load factor
+# normalized by load factor
 def stats_by_type
   ci, si, pi = importers
 
@@ -125,10 +125,12 @@ def stats_by_type
   p totals
 
   rates = Hash[*stats.map{|k, v| [k, v.to_f / totals[k]]}.flatten]
-  rates
+  normalize(rates)
 end
 
 # make all the values sum to 1
 def normalize(hash)
+  sum = hash.deep_inject(0){|s, (k, v)| s + v}
   
+  hash.deep_map_values{|k| k / sum}
 end
