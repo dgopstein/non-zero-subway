@@ -34,6 +34,10 @@ class StopImporter
          end
   end
 
+  def by_id
+    stops.mash{|s| [s.id, s]}
+  end
+
   def trips
     StopImporter.link_stops(stops)
         .map_values{|chains| chains.select{|s| s.length > 1}} # remove rides of only one stop
