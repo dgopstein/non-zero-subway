@@ -21,3 +21,6 @@ project/plugins/project/
 .worksheet
 .idea
 subway.iml
+
+backup
+Gemfile.lock
