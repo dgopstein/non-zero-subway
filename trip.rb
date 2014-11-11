@@ -35,7 +35,7 @@ class StopImporter
   end
 
   def by_id
-    stops.mash{|s| [s.id, s]}
+    @by_id ||= stops.mash{|s| [s.id, s]}
   end
 
   def trips

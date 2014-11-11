@@ -17,7 +17,7 @@ class PassengerImporter
   end
 
   def by_stop
-    passengers.group_by{|p| p.form_id}
+    @by_stop ||= passengers.group_by{|p| p.form_id}
   end
 
   def by_form_id(id)
