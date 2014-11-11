@@ -35,7 +35,34 @@ end
 
 Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule)
 
-def parse_space(str)
+def space_type(space_name, car)
+  space = 
+    if space_name.nil?
+      nil or return :nil
+    elsif space_name.is_a? String
+      car.lookup_tbl[space_name] or return :unknown
+    else
+      space_name # They actually passed the full space struct
+    end
+
+  if space.position > 0
+    if space.door > 0 then :seat_door
+    elsif space.seat_pole > 0 then :seat_pole
+    elsif space.wall > 0 then :seat_wall
+    else :seat_middle
+    end
+  else
+    if space.door > 0 then :floor_door
+    elsif space.pole > 0 then :floor_pole # pole NOT seat_pole
+    elsif space.wall > 0 then :floor_wall
+    else :floor
+    end
+  end
+end
+
+def parse_space(space)
+  str = if space.respond_to?(:space) then space.space else space end
+
   space_col, space_row = str.match(/([0-9.]+)(\w+)/).captures
   [space_col.to_i, (space_row.downcase.ord - 'a'.ord)]
 end

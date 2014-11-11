@@ -1,35 +1,4 @@
-def space_type(space_name, car)
-  space = 
-    if space_name.nil?
-      nil or return :nil
-    elsif space_name.is_a? String
-      car.lookup_tbl[space_name] or return :unknown
-    else
-      space_name # They actually passed the full space struct
-    end
-
-  if space.position > 0
-    if space.door > 0 then :seat_door
-    elsif space.seat_pole > 0 then :seat_pole
-    elsif space.wall > 0 then :seat_wall
-    else :seat_middle
-    end
-  else
-    if space.door > 0 then :floor_door
-    elsif space.pole > 0 then :floor_pole # pole NOT seat_pole
-    elsif space.wall > 0 then :floor_wall
-    else :floor
-    end
-  end
-end
-
 DB_DIR = '/Users/dgopstein/nyu/subway/db/'
-
-#def importers
-#  [ci = CarImporter.new(DB_DIR+'LOOKUP_TBL.csv'),
-#  si = StopImporter.new(DB_DIR+'FORM_TBL.csv'),
-#  pi = PassengerImporter.new(DB_DIR+'RECORDS.csv')]
-#end
 
 def ci; $ci ||= CarImporter.new(DB_DIR+'LOOKUP_TBL.csv'); end
 def si; $si ||= StopImporter.new(DB_DIR+'FORM_TBL.csv'); end
@@ -99,15 +68,31 @@ def hash_distance(h1, h2)
   distance(a1, a2)
 end
 
+def occupied_and_not(plan, passengers)
+  occupied = passengers.map(&:space)
+  unoccupied = plan.flatten.select{|space| space and !occupied.include?(space)}
+
+  [occupied, unoccupied]
+end
+
 # Simulate how passengers would fill a train if they behaved randomly
 def choose_randomly(door, plan, passengers)
-  occupied = passengers.map(&:space)
-  plan.flatten.shuffle.detect{|space| space and !occupied.include?(space.space)}
+  occupied, unoccupied = occupied_and_not(plan, passengers)
+  unoccupied.sample
+end
+
+def space_distance(s1, s2)
+  c1, r1 = parse_space(s1)
+  c2, r2 = parse_space(s2)
+
+  (c2 - c1).abs + (r2 - r1).abs
 end
 
 # Go to the closest available seat
 def choose_nearest(door, plan, passengers)
-
+  occupied, unoccupied = occupied_and_not(plan, passengers)
+  
+  unoccupied.min_by { |s| space_distance(door, s) }
 end
 
 def simulate_stop(car, stop, choice_algo)
@@ -115,8 +100,9 @@ def simulate_stop(car, stop, choice_algo)
 
   passengers = []
 
+  doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
   (0..passengers_per_stop).each do |i|
-    space = choice_algo.call(->{raise "undefined door!"}, car.plan, passengers)
+    space = choice_algo.call(doors[i % doors.length], car.plan, passengers)
     passengers << Passenger.new(i, stop.id, nil, space, nil, nil, nil)
   end
 
@@ -138,7 +124,7 @@ def compare_algos
   stop_passes_list = {
     control: control_data,
     random: simulate_algo(si.stops, :choose_randomly),
-    #nearest: simulate_algo(si.stops, :choose_nearest),
+    nearest: simulate_algo(si.stops, :choose_nearest),
   }
 
   stop_passes_list.each do |name, stop_passes|
