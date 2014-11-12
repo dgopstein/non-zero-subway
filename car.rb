@@ -33,7 +33,11 @@ class Car
   end
 end
 
-Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule)
+Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule) do
+  def seat?
+    position > 0
+  end
+end
 
 def space_type(space_name, car)
   space = 
