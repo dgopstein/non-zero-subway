@@ -5,12 +5,17 @@ Processing::App::SKETCH_PATH = __FILE__
 class CarVisualizer < Processing::App
   attr_accessor :passengers_by_stop, :stop
 
-  def initialize(car, passengers_by_stop = [])
-    @stop = 0
-    @car = car
+  def initialize(passengers_by_stop = [])
+    @stop_idx = 0
+    @car = $ci.cars[passengers_by_stop.keys.first.car_class]
     @seat_size = 40
     @passengers_by_stop = passengers_by_stop
     super(x: 20, y: 30) # what does this mean?
+  end
+
+  # {Stop => [Passenger]}
+  def play_stops(stops_passes)
+    @passengers_by_stop
   end
 
   #def reinit(car, passengers)
@@ -61,21 +66,37 @@ class CarVisualizer < Processing::App
         end
       end
     end
-    draw_passengers(@passengers_by_stop[@stop])
-
+    #pp @passengers_by_stop.deep_map_values{|x| x.ergo.inspect[8,18]}.map_keys{|x| x.ergo.id}
+    draw_passengers(@passengers_by_stop.values[@stop_idx])
   end
+
   def key_pressed
     puts "key_pressed: "+[key, keyCode].inspect
     if key == CODED
       case keyCode
+
       when 37 # <
-      @stop = [@stop - 1, 0].max
-      #when 38 # ^
+      @stop_idx = [@stop_idx - 1, 0].max
+      @car = $ci.cars[stop.car_class]
+      puts "stop: "+ stop.id.to_s
+
       when 39 # >
-      @stop = [@stop + 1, @passengers_by_stop.size - 1].min
+      @stop_idx = [@stop_idx + 1, @passengers_by_stop.size - 1].min
+      @car = $ci.cars[stop.car_class]
+      puts "stop: "+ stop.id.to_s
+
+      #when 38 # ^
       #when 40 # v
       end
     end
+  end
+  
+  def stop
+    @passengers_by_stop.keys[@stop_idx]
+  end
+
+  def passengers
+    @passengers_by_stop.values[@stop_idx]
   end
 
   def space_to_xy(col, row)

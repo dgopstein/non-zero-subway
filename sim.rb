@@ -1,3 +1,5 @@
+require 'pp'
+
 DB_DIR = '/Users/dgopstein/nyu/subway/db/'
 
 def ci; $ci ||= CarImporter.new(DB_DIR+'LOOKUP_TBL.csv'); end
@@ -160,6 +162,8 @@ def choose_nearest_seat(door, plan, passengers)
 end
 
 # A fully comprehensive pure strategy
+# trip(2, 4, 1) - [0.2966]/stop: [0.1958]
+# trip(2, 8, 1) - [0.2735]/[0.1378]
 def choose_near_seat_alone(door, plan, passengers)
   max_dist = parse_space(plan.last.last).sum
   exp_dist = lambda do |a, b|
@@ -171,9 +175,9 @@ def choose_near_seat_alone(door, plan, passengers)
   
   weights = 
     unoccupied.map do |space|
-      w_person = 2
-      w_seat = 4
-      w_door = 1
+      w_person = 1
+      w_seat = 8
+      w_door = 0.5
       person_dist = Math.log(occupied.map{|occ| space_distance(space, occ)}.min || max_dist)
       sit_preference = space.seat? ? 1 : 0
       door_distance = exp_dist.call(space, door)
@@ -229,7 +233,8 @@ def simulate_stop(car, stop, choice_algo)
   doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
   (0..passengers_per_stop).each do |i|
     space = choice_algo.call(doors[i % doors.length], car.plan, passengers)
-    passengers << Passenger.new(i, stop.id, nil, space, nil, nil, nil)
+    space_name = space_to_str(space)
+    passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil)
   end
 
   [stop, passengers]
@@ -238,14 +243,14 @@ end
 def simulate_algo(stops, method_name)
   stops.mash do |stop|
     car = ci.cars[stop.car_class]
-    simulate_stop(car, stop, nil, nil, nil, method(method_name))
+    simulate_stop(car, stop, method(method_name))
   end
 end
 
 # For a list of multiple trips, boil it down to a list of 1-stop trips
 # where the train travels just between 2 stations
 # [[last_stop, this_stop], [this_stop, next_stop], ...]
-def extract_stop_pairs(trip)
+def extract_stop_pairs(trips)
   trips.values.flatten(1).map{|trip| trip.each_cons(2)}.map(&:to_a).flatten(1)
 end
 
@@ -282,28 +287,37 @@ def simulate_trips(trips, method_name)
   stop_pairs = extract_stop_pairs(trips)
 
   stop_pairs.mash do |last_stop, this_stop|
-    if last_stop.car_class != this_stop.car_class
+    if last_stop.car_class.chop != this_stop.car_class.chop
       raise "cars aren't the same!:\n#{last_stop}\n#{this_stop}" 
     end
 
     car = ci.cars[last_stop.car_class]
     remaining_passengers = exit_passengers(last_stop, this_stop)
-    n_boarding = this_stop.passengers.size - remaining_passengers.size
+    n_boarding = pi.by_stop[this_stop.id].size - remaining_passengers.size
     simulate_trip_stop(car, last_stop, remaining_passengers,
                        n_boarding, method(method_name))
   end
 end
 
-def simulate_trip_stop(car, stop, passengers, n_in, choice_algo)
-  passengers = []
+def space_to_str(space)
+  space.is_a?(String) ? space : space.space
+end
+
+def space_to_obj(space)
+  #space.is_a?(String) ? $si.byspace : space
+end
+
+def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
+  new_passengers = passengers.dup
 
   doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
-  (0..n_in).each do |i|
-    space = choice_algo.call(doors[i % doors.length], car.plan, passengers)
-    passengers << Passenger.new(i, stop.id, nil, space, nil, nil, nil)
+  (0..n_boarding).each do |i|
+    space = choice_algo.call(doors[i % doors.length], car.plan, new_passengers)
+    space_name = space_to_str(space)
+    new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil)
   end
 
-  [stop, passengers]
+  [stop, new_passengers]
 end
 
 #TODO average distance between people
@@ -322,17 +336,32 @@ def compare_algos
     #nearest: ->{ simulate_algo(si.stops, :choose_nearest) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
-    nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
-    choose_near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
+    #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
+    #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
+    #trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
+    trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
+    
   }
 
-  stop_passes_list.each do |name, algo|
+  res = stop_passes_list.mash do |name, algo|
     stop_passes = time(name, &algo)
     stats = stats_by_type(stop_passes)
     dist = hash_distance(control_stats, stats)
     display_stats = stats.map_values{|v| '%.03f' % v}.sort_by{|k,v|k}
     puts '[%.04f] %10s - %s' % [dist, name, display_stats]
+    [name, stop_passes]
   end
+
+  #cv = CarVisualizer.new(res[:control].deep_zip(res[:trip_seat_alone]).deep_values)
+  zipped = res[:control].deep_zip(res[:trip_seat_alone]).map_values{|a| a.select{|(a, b)| a && b}}
+  flat_hash = zipped.inject({}) do |h, (k, v)|
+    kb = k.dup
+    kb.id = k.id.to_s+'b'
+    a, b = v.transpose
+    h.merge(k => a, kb => b)
+  end
+  #pp flat_hash.deep_map{|k, v| 'p'+v.ergo.space.to_s}.map_keys{|k| 's'+k.id.to_s}
+  cv = CarVisualizer.new(flat_hash)
 
   nil
 end
