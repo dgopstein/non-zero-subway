@@ -159,6 +159,36 @@ def choose_nearest_seat(door, plan, passengers)
   unoccupied.select(&:seat?).min_by { |s| space_distance(door, s) }
 end
 
+# A fully comprehensive pure strategy
+def choose_near_seat_alone(door, plan, passengers)
+  max_dist = parse_space(plan.last.last).sum
+  exp_dist = lambda do |a, b|
+    Math.exp( (1 - space_distance(a, b)/max_dist.to_f) - 1)
+  end
+
+  occupied, unoccupied = occupied_and_not(plan, passengers)
+
+  
+  weights = 
+    unoccupied.map do |space|
+      w_person = 2
+      w_seat = 4
+      w_door = 1
+      person_dist = Math.log(occupied.map{|occ| space_distance(space, occ)}.min || max_dist)
+      sit_preference = space.seat? ? 1 : 0
+      door_distance = exp_dist.call(space, door)
+
+      w_person * person_dist +
+      w_seat * sit_preference +
+      w_door * door_distance
+    end
+
+  space_weights = Hash[*unoccupied.zip(weights).flatten]
+  #p space_weights.map_keys(&:space)
+
+  sample_weighted_hash(space_weights)
+end
+
 # given a list of numbers, sample the list with frequencies
 # proportional to those numbers, returning the index of the
 # element selected
@@ -192,7 +222,7 @@ def sample_weighted_hash(hash)
 end
 
 def simulate_stop(car, stop, choice_algo)
-  passengers_per_stop = 20
+  passengers_per_stop = 31 # average number of passengers per stop
 
   passengers = []
 
@@ -208,9 +238,78 @@ end
 def simulate_algo(stops, method_name)
   stops.mash do |stop|
     car = ci.cars[stop.car_class]
-    simulate_stop(car, stop, method(method_name))
+    simulate_stop(car, stop, nil, nil, nil, method(method_name))
   end
 end
+
+# For a list of multiple trips, boil it down to a list of 1-stop trips
+# where the train travels just between 2 stations
+# [[last_stop, this_stop], [this_stop, next_stop], ...]
+def extract_stop_pairs(trip)
+  trips.values.flatten(1).map{|trip| trip.each_cons(2)}.map(&:to_a).flatten(1)
+end
+
+# Given stop adjacent stops, determine (probabilistically)
+# which passengers stay on, and which leave
+def exit_passengers(last_stop, this_stop)
+  last_passes = pi.by_stop[last_stop.id]
+  this_passes = pi.by_stop[this_stop.id]
+
+  this_hash = this_passes.mash{|pass| [pass.space, pass]}
+  still_filled = last_passes.each_with_object({}) do |pass, h|
+    this_pass = this_hash[pass.space]
+    if this_pass
+        h[pass.space] = [pass, this_pass]
+    end
+  end
+ 
+  # The people who left who's seats weren't immediately refilled
+  n_unreplaced = last_passes.size - still_filled.size
+
+  # if the gender of a passenger changes, its probably two
+  # separate people, changing places.
+  same_gendered = still_filled.reject{|s, (p1, p2)| p1.gender != p2.gender}.values.map(&:first)
+  
+  # How many people switched gender at this stop
+  n_gendered_replacements = still_filled.size - same_gendered.size
+
+  # On average, just as many women will be replaced with women
+  # as will be replaced with men, so multiply W->M * 2 to account for W->W
+  same_gendered - same_gendered.sample(n_gendered_replacements)
+end
+
+def simulate_trips(trips, method_name)
+  stop_pairs = extract_stop_pairs(trips)
+
+  stop_pairs.mash do |last_stop, this_stop|
+    if last_stop.car_class != this_stop.car_class
+      raise "cars aren't the same!:\n#{last_stop}\n#{this_stop}" 
+    end
+
+    car = ci.cars[last_stop.car_class]
+    remaining_passengers = exit_passengers(last_stop, this_stop)
+    n_boarding = this_stop.passengers.size - remaining_passengers.size
+    simulate_trip_stop(car, last_stop, remaining_passengers,
+                       n_boarding, method(method_name))
+  end
+end
+
+def simulate_trip_stop(car, stop, passengers, n_in, choice_algo)
+  passengers = []
+
+  doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
+  (0..n_in).each do |i|
+    space = choice_algo.call(doors[i % doors.length], car.plan, passengers)
+    passengers << Passenger.new(i, stop.id, nil, space, nil, nil, nil)
+  end
+
+  [stop, passengers]
+end
+
+#TODO average distance between people
+#TODO every stop, present real seating scenerio along trips
+#TODO more accurate doors, longitudenally & laterally
+#TODO whether people get off and their seats are re-sat immediately
 
 
 # compare different space choosing algorithms
@@ -220,10 +319,11 @@ def compare_algos
   stop_passes_list = {
     control: ->{ control_data },
     #random:  ->{ simulate_algo(si.stops, :choose_randomly) },
-    nearest: ->{ simulate_algo(si.stops, :choose_nearest) },
+    #nearest: ->{ simulate_algo(si.stops, :choose_nearest) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
     nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
+    choose_near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
   }
 
   stop_passes_list.each do |name, algo|
