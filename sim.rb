@@ -232,9 +232,10 @@ def simulate_stop(car, stop, choice_algo)
 
   doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
   (0..passengers_per_stop).each do |i|
-    space = choice_algo.call(doors[i % doors.length], car.plan, passengers)
+    door = doors[i % doors.length]
+    space = choice_algo.call(door, car.plan, passengers)
     space_name = space_to_str(space)
-    passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil)
+    passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
   end
 
   [stop, passengers]
@@ -309,12 +310,13 @@ end
 
 def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   new_passengers = passengers.dup
-
   doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
+
   (0..n_boarding).each do |i|
-    space = choice_algo.call(doors[i % doors.length], car.plan, new_passengers)
+    door = doors[i % doors.length]
+    space = choice_algo.call(door, car.plan, new_passengers)
     space_name = space_to_str(space)
-    new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil)
+    new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
   end
 
   [stop, new_passengers]
@@ -352,16 +354,24 @@ def compare_algos
     [name, stop_passes]
   end
 
-  #cv = CarVisualizer.new(res[:control].deep_zip(res[:trip_seat_alone]).deep_values)
-  zipped = res[:control].deep_zip(res[:trip_seat_alone]).map_values{|a| a.select{|(a, b)| a && b}}
-  flat_hash = zipped.inject({}) do |h, (k, v)|
+  #zipped = res[:control].deep_zip(res[:trip_seat_alone]).map_values{|a| a.select{|(a, b)| a && b}}
+  display_alternating(res[:control], res[:trip_seat_alone])
+
+  nil
+end
+
+def display_alternating(hash_a, hash_b)
+  flat_hash = hash_a.keys.inject({}) do |h, k|
     kb = k.dup
     kb.id = k.id.to_s+'b'
-    a, b = v.transpose
-    h.merge(k => a, kb => b)
+    a = hash_a[k]
+    b = hash_b[k]
+    if (a && b)
+      h.merge(k => a, kb => b)
+    else
+      h
+    end
   end
   #pp flat_hash.deep_map{|k, v| 'p'+v.ergo.space.to_s}.map_keys{|k| 's'+k.id.to_s}
   cv = CarVisualizer.new(flat_hash)
-
-  nil
 end

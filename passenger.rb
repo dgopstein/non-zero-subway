@@ -1,4 +1,7 @@
-Passenger = Struct.new(:id, :form_id, :gender, :space, :large_psgr, :legs_on_seat, :bag)
+Passenger = Struct.new(:id, :form_id, :gender, :space, :large_psgr, :legs_on_seat, :bag) do
+  attr_accessor :door
+end
+
 
 class PassengerImporter
   include CsvImporter

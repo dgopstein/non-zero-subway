@@ -112,6 +112,13 @@ class CarVisualizer < Processing::App
     passengers.each do |passenger|
       col, row = parse_space(passenger.space)
       ellipse(*space_to_xy(col, row), @seat_size/2.0, @seat_size/2.0)
+
+      # draw trail
+      if passenger.door
+        door_col, door_row = parse_space(passenger.door.space)
+        line(*space_to_xy(col, row), *space_to_xy(door_col, door_row))
+      end
+
     end
   end
 end
