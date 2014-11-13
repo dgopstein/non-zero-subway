@@ -79,11 +79,13 @@ class CarVisualizer < Processing::App
       @stop_idx = [@stop_idx - 1, 0].max
       @car = $ci.cars[stop.car_class]
       puts "stop: "+ stop.id.to_s
+      p passengers.map(&:space)
 
       when 39 # >
       @stop_idx = [@stop_idx + 1, @passengers_by_stop.size - 1].min
       @car = $ci.cars[stop.car_class]
       puts "stop: "+ stop.id.to_s
+      p passengers.map(&:space)
 
       #when 38 # ^
       #when 40 # v
@@ -116,7 +118,9 @@ class CarVisualizer < Processing::App
       # draw trail
       if passenger.door
         door_col, door_row = parse_space(passenger.door.space)
-        line(*space_to_xy(col, row), *space_to_xy(door_col, door_row))
+        door_x, door_y = space_to_xy(door_col, door_row)
+        door_y -= @seat_size/3.0
+        line(door_x, door_y, *space_to_xy(col, row))
       end
 
     end

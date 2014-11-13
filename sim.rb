@@ -88,7 +88,7 @@ end
 
 def occupied_and_not(plan, passengers)
   occupied = passengers.map(&:space)
-  unoccupied = plan.flatten.select{|space| space and !occupied.include?(space)}
+  unoccupied = plan.flatten.select{|space| space and !occupied.include?(space.space)}
 
   [occupied, unoccupied]
 end
@@ -171,6 +171,7 @@ def choose_near_seat_alone(door, plan, passengers)
   end
 
   occupied, unoccupied = occupied_and_not(plan, passengers)
+  puts "unocc: "+ unoccupied.map(&:space).sort.inspect
 
   
   weights = 
@@ -314,6 +315,7 @@ def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
 
   (0..n_boarding).each do |i|
     door = doors[i % doors.length]
+    p new_passengers.map(&:space)
     space = choice_algo.call(door, car.plan, new_passengers)
     space_name = space_to_str(space)
     new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
@@ -354,7 +356,6 @@ def compare_algos
     [name, stop_passes]
   end
 
-  #zipped = res[:control].deep_zip(res[:trip_seat_alone]).map_values{|a| a.select{|(a, b)| a && b}}
   display_alternating(res[:control], res[:trip_seat_alone])
 
   nil
