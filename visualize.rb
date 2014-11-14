@@ -7,6 +7,8 @@ class CarVisualizer < Processing::App
 
   def set_car(c)
     @car = c
+
+    # pretty sure this doesn't do anything
     resize (@car.width+1)*@seat_size,
          (@car.height+1)*@seat_size
   end
@@ -26,6 +28,20 @@ class CarVisualizer < Processing::App
   # {Stop => [Passenger]}
   def play_stops(stops_passes)
     @passengers_by_stop = stops_passes
+  end
+
+  # {Stop => [Passenger]}
+  def play_passengers(stops_passes)
+    suffixes = ('aa'..'zz').take(200)
+    @passengers_by_stop = stops_passes.inject({}) do |h, (stop, pass)|
+      pass_by_stop = (0..pass.length).mash do |i|
+        stop_suffix = suffixes[i]
+        new_stop = stop.dup.tap{|s| s.id = s.id.to_s+stop_suffix }
+        new_passes = pass[0, i]
+        [new_stop, new_passes]
+      end
+      h.merge(pass_by_stop)
+    end
   end
 
   #def reinit(car, passengers)
@@ -134,4 +150,3 @@ class CarVisualizer < Processing::App
     end
   end
 end
-

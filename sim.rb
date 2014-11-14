@@ -72,7 +72,7 @@ def normalize(hash)
 end
 
 # eulcidean distance between two vectors (arrays of numbers)
-def distance(v1, v2)
+def euclidean_distance(v1, v2)
   raise "vectors are different sizes!\n#{v1}\n#{v2}" if v1.size != v2.size
 
   Math.sqrt(v1.zip(v2).map{|a, b| ((b||0) - (a||0))**2}.sum)
@@ -83,7 +83,7 @@ def hash_distance(h1, h2)
 
   a1, a2 = pairwise.each_with_index.partition{|v, i| i.even?}.map{|a| a.map(&:first)}
 
-  distance(a1, a2)
+  euclidean_distance(a1, a2)
 end
 
 def occupied_and_not(plan, passengers)
@@ -103,14 +103,22 @@ def space_distance(s1, s2)
   c1, r1 = parse_space(s1)
   c2, r2 = parse_space(s2)
 
-  (c2 - c1).abs + (r2 - r1).abs
+  [(c2 - c1).abs, (r2 - r1).abs]
+end
+
+def longitudinal_distance(s1, s2)
+  space_distance(s1, s2).first
+end
+
+def manhattan_distance(s1, s2)
+  space_distance(s1, s2).sum
 end
 
 # Go to the closest available seat
 def choose_nearest(door, plan, passengers)
   occupied, unoccupied = occupied_and_not(plan, passengers)
   
-  unoccupied.min_by { |s| space_distance(door, s) }
+  unoccupied.min_by { |s| manhattan_distance(door, s) }
 end
 
 # Go furthest from all people: 12seconds, 0.3682distance
@@ -119,10 +127,10 @@ def choose_alonest(door, plan, passengers)
   
   unoccupied.max_by do  |space|
     nearest_person =
-        occupied.min_by {|occ| space_distance(space, occ)} ||
+        occupied.min_by {|occ| manhattan_distance(space, occ)} ||
         choose_nearest(door, plan, passengers) # The first person will sit near the door
     
-    space_distance(nearest_person, space) 
+    manhattan_distance(nearest_person, space) 
   end
 end
 
@@ -139,10 +147,10 @@ def choose_near_and_alone(door, plan, passengers)
   
   distance_to_people = 
     unoccupied.map do |space|
-      occupied.map{|occ| space_distance(space, occ)}.min || nobody_near
+      occupied.map{|occ| manhattan_distance(space, occ)}.min || nobody_near
     end
 
-  distance_to_door = unoccupied.map { |space| space_distance(space, door) }
+  distance_to_door = unoccupied.map { |space| manhattan_distance(space, door) }
 
   weights =
     distance_to_people.zip(distance_to_door).map do |p, d|
@@ -158,7 +166,7 @@ end
 def choose_nearest_seat(door, plan, passengers)
   occupied, unoccupied = occupied_and_not(plan, passengers)
   
-  unoccupied.select(&:seat?).min_by { |s| space_distance(door, s) }
+  unoccupied.select(&:seat?).min_by { |s| manhattan_distance(door, s) }
 end
 
 def class_to_car(car_class)
@@ -173,8 +181,8 @@ end
 def choose_near_seat_alone(door, plan, passengers)
   max_dist = parse_space(plan.last.last).sum
   exp_dist = lambda do |a, b|
-    #Math.exp( (1 - space_distance(a, b)/max_dist.to_f) - 1)
-    [20 - space_distance(a, b), 0].max
+    #Math.exp( (1 - manhattan_distance(a, b)/max_dist.to_f) - 1)
+    [10 - longitudinal_distance(a, b), 0].max
   end
 
   occupied, unoccupied = occupied_and_not(plan, passengers)
@@ -188,7 +196,7 @@ def choose_near_seat_alone(door, plan, passengers)
       w_door = 5
       w_seat_pole = 5
 
-      person_dist = Math.log(occupied.map{|occ| space_distance(space, occ)}.min || max_dist)
+      person_dist = Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min || max_dist)
       sit_preference = space.seat? ? 1 : 0
       door_distance = exp_dist.call(space, door)
 
@@ -371,7 +379,8 @@ def compare_algos
     [name, stop_passes]
   end
 
-  display_alternating(res[:control], res[:trip_seat_alone])
+  #display_alternating(res[:control], res[:trip_seat_alone])
+  display_passengers(res[:trip_seat_alone])
 
   nil
 end
@@ -391,4 +400,9 @@ def display_alternating(hash_a, hash_b)
   #pp flat_hash.deep_map{|k, v| 'p'+v.ergo.space.to_s}.map_keys{|k| 's'+k.id.to_s}
   $cv ||= CarVisualizer.new()
   $cv.play_stops(flat_hash)
+end
+
+def display_passengers(hash)
+  $cv ||= CarVisualizer.new()
+  $cv.play_passengers(hash)
 end
