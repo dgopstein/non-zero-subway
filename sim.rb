@@ -174,15 +174,16 @@ def class_to_car(car_class)
 end
 
 # A fully comprehensive pure strategy
-# 6,6,1: [0.1213] - looks good though?
-# 8,6,1: [0.1163] 
-# 6,10,1,5,5: [0.0924]
-# 6,10,1,5,5,5: [0.0403]
+# 6,10,14,5,5,5: [0.0306]
+# 6,9,14,5,5,5: [0.0220]
+# 6,8,14,5,5,5: [0.0217]
+# 6,7,14,5,5,5: [0.0607]
+# 6,8,14,1,5,5: [0.0202]
+# 6,8,14,1,5,4: [0.0151] *
 def choose_near_seat_alone(door, plan, passengers)
-  max_dist = parse_space(plan.last.last).sum
+  max_dist = 14.0
   exp_dist = lambda do |a, b|
-    #Math.exp( (1 - manhattan_distance(a, b)/max_dist.to_f) - 1)
-    [10 - longitudinal_distance(a, b), 0].max
+    [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
 
   occupied, unoccupied = occupied_and_not(plan, passengers)
@@ -190,11 +191,11 @@ def choose_near_seat_alone(door, plan, passengers)
   weights = 
     unoccupied.map do |space|
       w_person = 6
-      w_seat = 10
-      w_dist = 1
-      w_no_pole = 5
+      w_seat = 8 
+      w_dist = 14
+      w_no_pole = 1
       w_door = 5
-      w_seat_pole = 5
+      w_seat_pole = 4
 
       person_dist = Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min || max_dist)
       sit_preference = space.seat? ? 1 : 0
@@ -363,7 +364,7 @@ def compare_algos
     #random:  ->{ simulate_algo(si.stops, :choose_randomly) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
-    nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
+    #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
     #trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
     trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
