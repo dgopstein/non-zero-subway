@@ -174,14 +174,10 @@ def class_to_car(car_class)
 end
 
 # A fully comprehensive pure strategy
-# 6,10,14,5,5,5: [0.0306]
-# 6,9,14,5,5,5: [0.0220]
-# 6,8,14,5,5,5: [0.0217]
-# 6,7,14,5,5,5: [0.0607]
-# 6,8,14,1,5,5: [0.0202]
 # 6,8,14,1,5,4: [0.0151] *
 def choose_near_seat_alone(door, plan, passengers)
   max_dist = 14.0
+  car_dist = manhattan_distance('01a', plan.last.last)
   exp_dist = lambda do |a, b|
     [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
@@ -190,16 +186,16 @@ def choose_near_seat_alone(door, plan, passengers)
   
   weights = 
     unoccupied.map do |space|
-      w_person = 6
+      w_person = 21.9
       w_seat = 8 
       w_dist = 14
       w_no_pole = 1
       w_door = 5
       w_seat_pole = 4
 
-      person_dist = Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min || max_dist)
+      person_dist = Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
       sit_preference = space.seat? ? 1 : 0
-      door_distance = exp_dist.call(space, door)
+      walk_distance = exp_dist.call(space, door)
 
       is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
 
@@ -209,7 +205,7 @@ def choose_near_seat_alone(door, plan, passengers)
 
       w_person * person_dist +
       w_seat * sit_preference +
-      w_dist * door_distance +
+      w_dist * walk_distance +
       w_no_pole * no_pole +
       w_door * stand_door +
       w_seat_pole * seat_pole
