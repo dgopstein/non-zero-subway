@@ -3,19 +3,29 @@ require 'ruby-processing'
 Processing::App::SKETCH_PATH = __FILE__
 
 class CarVisualizer < Processing::App
-  attr_accessor :passengers_by_stop, :stop
+  attr_accessor :passengers_by_stop, :stop, :car
 
-  def initialize(passengers_by_stop = [])
-    @stop_idx = 0
-    @car = $ci.cars[passengers_by_stop.keys.first.car_class]
+  def set_car(c)
+    @car = c
+    resize (@car.width+1)*@seat_size,
+         (@car.height+1)*@seat_size
+  end
+
+  def initialize(passengers_by_stop = {})
     @seat_size = 40
+    @stop_idx = 0
     @passengers_by_stop = passengers_by_stop
-    super(x: 20, y: 30) # what does this mean?
+
+    @car = $ci.cars[
+      passengers_by_stop.empty? ? 'R68' : stops.first.car_class
+    ]
+
+    super(x: 40, y: 30) # what does this mean?
   end
 
   # {Stop => [Passenger]}
   def play_stops(stops_passes)
-    @passengers_by_stop
+    @passengers_by_stop = stops_passes
   end
 
   #def reinit(car, passengers)
@@ -26,14 +36,14 @@ class CarVisualizer < Processing::App
   #end
 
   def setup
+    background 255
     size (@car.width+1)*@seat_size,
          (@car.height+1)*@seat_size
-    background 255
     smooth
   end
   
   def draw
-    @car.plan.each_with_index do |col, col_num|
+    car.plan.each_with_index do |col, col_num|
       col and col.each_with_index do |record, row_num|
         x = col_num*@seat_size
         y = row_num*@seat_size
@@ -62,7 +72,7 @@ class CarVisualizer < Processing::App
           f = createFont("Arial",16,true)
           textFont(f, 11)
           #text(record.space, x, y+@seat_size)
-          text(space_type(record.space, @car).to_s.gsub(/.*_/, ''), x, y+@seat_size)
+          text(space_type(record.space, car).to_s.gsub(/.*_/, ''), x, y+@seat_size)
         end
       end
     end
@@ -71,21 +81,19 @@ class CarVisualizer < Processing::App
   end
 
   def key_pressed
-    puts "key_pressed: "+[key, keyCode].inspect
+    #puts "key_pressed: "+[key, keyCode].inspect
     if key == CODED
       case keyCode
 
       when 37 # <
       @stop_idx = [@stop_idx - 1, 0].max
-      @car = $ci.cars[stop.car_class]
+      set_car $ci.cars[stop.car_class]
       puts "stop: "+ stop.id.to_s
-      p passengers.map(&:space)
 
       when 39 # >
       @stop_idx = [@stop_idx + 1, @passengers_by_stop.size - 1].min
-      @car = $ci.cars[stop.car_class]
+      set_car $ci.cars[stop.car_class]
       puts "stop: "+ stop.id.to_s
-      p passengers.map(&:space)
 
       #when 38 # ^
       #when 40 # v
@@ -111,7 +119,7 @@ class CarVisualizer < Processing::App
 
   def draw_passengers(passengers)
     fill 18, 102, 255
-    passengers.each do |passenger|
+    passengers.ergo.each do |passenger|
       col, row = parse_space(passenger.space)
       ellipse(*space_to_xy(col, row), @seat_size/2.0, @seat_size/2.0)
 

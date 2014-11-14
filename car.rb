@@ -25,7 +25,7 @@ class Car
   end
 
   def doors
-    plan.flatten.select{|space| space.ergo.door.ergo.nonzero? }
+    plan.flatten.select{|space| !space.ergo.seat? && space.ergo.door.ergo.nonzero? }
   end
 
   def to_s

@@ -161,37 +161,55 @@ def choose_nearest_seat(door, plan, passengers)
   unoccupied.select(&:seat?).min_by { |s| space_distance(door, s) }
 end
 
+def class_to_car(car_class)
+  $ci.cars[car_class]
+end
+
 # A fully comprehensive pure strategy
-# trip(2, 4, 1) - [0.2966]/stop: [0.1958]
-# trip(2, 8, 1) - [0.2735]/[0.1378]
+# 6,6,1: [0.1213] - looks good though?
+# 8,6,1: [0.1163] 
+# 6,10,1,5,5: [0.0924]
+# 6,10,1,5,5,5: [0.0403]
 def choose_near_seat_alone(door, plan, passengers)
   max_dist = parse_space(plan.last.last).sum
   exp_dist = lambda do |a, b|
-    Math.exp( (1 - space_distance(a, b)/max_dist.to_f) - 1)
+    #Math.exp( (1 - space_distance(a, b)/max_dist.to_f) - 1)
+    [20 - space_distance(a, b), 0].max
   end
 
   occupied, unoccupied = occupied_and_not(plan, passengers)
-  puts "unocc: "+ unoccupied.map(&:space).sort.inspect
-
   
   weights = 
     unoccupied.map do |space|
-      w_person = 1
-      w_seat = 8
-      w_door = 0.5
+      w_person = 6
+      w_seat = 10
+      w_dist = 1
+      w_no_pole = 5
+      w_door = 5
+      w_seat_pole = 5
+
       person_dist = Math.log(occupied.map{|occ| space_distance(space, occ)}.min || max_dist)
       sit_preference = space.seat? ? 1 : 0
       door_distance = exp_dist.call(space, door)
 
+      is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
+
+      no_pole = 1 - is_space_type.call(:floor)
+      stand_door = is_space_type.call(:floor_door)
+      seat_pole = is_space_type.call(:seat_pole)
+
       w_person * person_dist +
       w_seat * sit_preference +
-      w_door * door_distance
+      w_dist * door_distance +
+      w_no_pole * no_pole +
+      w_door * stand_door +
+      w_seat_pole * seat_pole
     end
 
   space_weights = Hash[*unoccupied.zip(weights).flatten]
   #p space_weights.map_keys(&:space)
 
-  sample_weighted_hash(space_weights)
+  space_weights.max_by(&:last).first
 end
 
 # given a list of numbers, sample the list with frequencies
@@ -282,7 +300,8 @@ def exit_passengers(last_stop, this_stop)
 
   # On average, just as many women will be replaced with women
   # as will be replaced with men, so multiply W->M * 2 to account for W->W
-  same_gendered - same_gendered.sample(n_gendered_replacements)
+  # however, we can't know which seats were vacated, so just forget about it
+  same_gendered
 end
 
 def simulate_trips(trips, method_name)
@@ -315,7 +334,6 @@ def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
 
   (0..n_boarding).each do |i|
     door = doors[i % doors.length]
-    p new_passengers.map(&:space)
     space = choice_algo.call(door, car.plan, new_passengers)
     space_name = space_to_str(space)
     new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
@@ -324,11 +342,9 @@ def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   [stop, new_passengers]
 end
 
-#TODO average distance between people
+#TODO visualize decision weights per passenger
 #TODO every stop, present real seating scenerio along trips
 #TODO more accurate doors, longitudenally & laterally
-#TODO whether people get off and their seats are re-sat immediately
-
 
 # compare different space choosing algorithms
 def compare_algos
@@ -337,10 +353,9 @@ def compare_algos
   stop_passes_list = {
     control: ->{ control_data },
     #random:  ->{ simulate_algo(si.stops, :choose_randomly) },
-    #nearest: ->{ simulate_algo(si.stops, :choose_nearest) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
-    #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
+    nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
     #trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
     trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
@@ -374,5 +389,6 @@ def display_alternating(hash_a, hash_b)
     end
   end
   #pp flat_hash.deep_map{|k, v| 'p'+v.ergo.space.to_s}.map_keys{|k| 's'+k.id.to_s}
-  cv = CarVisualizer.new(flat_hash)
+  $cv ||= CarVisualizer.new()
+  $cv.play_stops(flat_hash)
 end
