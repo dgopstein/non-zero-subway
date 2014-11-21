@@ -1,8 +1,11 @@
 require 'ruby-processing'
+require '/Users/dgopstein/ruby-processing-heatmaps-lib/heatmaps.rb'
 
 Processing::App::SKETCH_PATH = __FILE__
 
 class CarVisualizer < Processing::App
+  include Heatmaps
+
   attr_accessor :passengers_by_stop, :stop, :car
 
   def set_car(c)
@@ -17,6 +20,7 @@ class CarVisualizer < Processing::App
     @seat_size = 40
     @stop_idx = 0
     @passengers_by_stop = passengers_by_stop
+    @heatmap = nil
 
     @car = $ci.cars[
       passengers_by_stop.empty? ? 'R68' : stops.first.car_class
@@ -92,8 +96,9 @@ class CarVisualizer < Processing::App
         end
       end
     end
-    #pp @passengers_by_stop.deep_map_values{|x| x.ergo.inspect[8,18]}.map_keys{|x| x.ergo.id}
     draw_passengers(@passengers_by_stop.values[@stop_idx])
+
+    image(@heatmap, 0,0) if @heatmap
   end
 
   def key_pressed
@@ -129,8 +134,7 @@ class CarVisualizer < Processing::App
     scale = @seat_size
     offset = (3/8.0)*@seat_size
     [col*scale + offset,
-     row*scale + offset]
-     
+     row*scale + offset].map(&:to_i)
   end
 
   def draw_passengers(passengers)
@@ -148,5 +152,24 @@ class CarVisualizer < Processing::App
       end
 
     end
+  end
+
+  def draw_heatmap(passengers_by_stop)
+    raise 'multiple car classes!' if passengers_by_stop.keys.map(&:car_class).uniq.size > 1
+
+    car = $ci.cars[passengers_by_stop.keys.first.car_class]
+    passengers = passengers_by_stop.values.flatten
+    dots = passengers.map(&:space).map{|s| space_to_xy(*parse_space(s))}
+
+
+    #(0..dots.length).each do |len|
+      #len = 4
+      len = dots.length
+      @heatmap = 
+      time("generating heatmap of len #{len}") do
+        draw_heat(width, height, dots.take(len), @seat_size*2)
+      end
+    #end
+
   end
 end

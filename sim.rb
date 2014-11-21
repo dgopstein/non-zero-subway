@@ -360,10 +360,10 @@ def compare_algos
     #random:  ->{ simulate_algo(si.stops, :choose_randomly) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
-    #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
+    nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
     #trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
-    trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
+    #trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
     
   }
 
@@ -377,7 +377,10 @@ def compare_algos
   end
 
   #display_alternating(res[:control], res[:trip_seat_alone])
-  display_passengers(res[:trip_seat_alone])
+  #display_passengers(res[:trip_seat_alone])
+  #display_passengers(res[:nearest_seat])
+  display_heatmap(res[:control])
+
 
   nil
 end
@@ -402,4 +405,10 @@ end
 def display_passengers(hash)
   $cv ||= CarVisualizer.new()
   $cv.play_passengers(hash)
+end
+
+def display_heatmap(hash)
+  $cv ||= CarVisualizer.new()
+  single_car = hash.select{|k,v| k.car_class == 'R68'}
+  $cv.draw_heatmap(single_car)
 end
