@@ -61,8 +61,8 @@ class CarVisualizer < Processing::App
          (@car.height+1)*@seat_size
     smooth
   end
-  
-  def draw
+
+  def draw_car(car)
     car.plan.each_with_index do |col, col_num|
       col and col.each_with_index do |record, row_num|
         x = col_num*@seat_size
@@ -96,9 +96,35 @@ class CarVisualizer < Processing::App
         end
       end
     end
+  end
+
+  def draw_pretty_car(car)
+    dir = File.dirname(File.expand_path(".", __FILE__))
+    img = loadImage(dir+"/layout/layout_#{car.name}.png")
+    tint(255, 127)
+    image(img, @seat_size, @seat_size) # give the image a bit of a margin
+  end
+
+  def draw_plain
+    draw_car(car)
     draw_passengers(@passengers_by_stop.values[@stop_idx])
 
+    # overlay a heatmap if it exists
     image(@heatmap, 0,0) if @heatmap
+  end
+
+  def draw_pretty
+    draw_pretty_car(car)
+    draw_passengers(@passengers_by_stop.values[@stop_idx])
+
+    # overlay a heatmap if it exists
+    image(@heatmap, 0,0) if @heatmap
+
+  end
+  
+  def draw
+    draw_plain
+    #draw_pretty
   end
 
   def key_pressed
@@ -130,11 +156,26 @@ class CarVisualizer < Processing::App
     @passengers_by_stop.values[@stop_idx]
   end
 
-  def space_to_xy(col, row)
+  def space_to_xy_plain(col, row)
     scale = @seat_size
     offset = (3/8.0)*@seat_size
     [col*scale + offset,
      row*scale + offset].map(&:to_i)
+  end
+
+  def space_to_xy_pretty(col, row)
+    margin = @seat_size
+    scale = @seat_size
+    offset = (3/8.0)*@seat_size
+    y = row*scale + offset + margin
+
+    section_size = 11
+    x = col%section_size 
+    
+  end
+
+  def space_to_xy(col, row)
+    space_to_xy_plain(col, row)
   end
 
   def draw_passengers(passengers)
