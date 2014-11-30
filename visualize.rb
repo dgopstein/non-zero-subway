@@ -8,6 +8,10 @@ class CarVisualizer < Processing::App
 
   attr_accessor :passengers_by_stop, :stop, :car
 
+  def dir
+    File.dirname(File.expand_path(".", __FILE__))
+  end
+
   def seat_size
     case car.name
     when 'R68' then 42
@@ -59,7 +63,7 @@ class CarVisualizer < Processing::App
 
   def setup
     background 255
-    size (@car.width+4)*seat_size,
+    size (@car.width+2)*seat_size,
          (@car.height+2)*seat_size
     smooth
   end
@@ -101,7 +105,6 @@ class CarVisualizer < Processing::App
   end
 
   def draw_pretty_car(car)
-    dir = File.dirname(File.expand_path(".", __FILE__))
     img = loadImage(dir+"/layout/layout_#{car.name}.png")
     tint(255, 127)
     image(img, seat_size, seat_size) # give the image a bit of a margin
@@ -215,7 +218,7 @@ class CarVisualizer < Processing::App
     end
   end
 
-  def draw_heatmap(passengers_by_stop)
+  def draw_heatmap(passengers_by_stop, filename=nil)
     raise 'multiple car classes!' if passengers_by_stop.keys.map(&:car_class).uniq.size > 1
 
     car = $ci.cars[passengers_by_stop.keys.first.car_class]
@@ -232,5 +235,9 @@ class CarVisualizer < Processing::App
       end
     #end
 
+    if filename && !filename.empty?
+      puts "Saving image to #{filename}"
+      p save(dir+'/'+filename) 
+    end
   end
 end
