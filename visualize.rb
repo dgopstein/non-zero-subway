@@ -237,6 +237,7 @@ class CarVisualizer < Processing::App
 
     if filename && !filename.empty?
       puts "Saving image to #{filename}"
+      sleep 1
       p save(dir+'/'+filename) 
     end
   end
