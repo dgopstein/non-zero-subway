@@ -37,6 +37,11 @@ Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :le
   def seat?
     position > 0
   end
+
+  # Seat faces forwards or back (not sideways) and is against the wall
+  def trans_edge?
+    [1, 4].include?(perpendicular)
+  end
 end
 
 def space_type(space_name, car)
@@ -51,6 +56,7 @@ def space_type(space_name, car)
 
   if space.position > 0
     if space.door > 0 then :seat_door
+    elsif space.trans_edge? then :seat_trans_edge
     elsif space.seat_pole > 0 then :seat_pole
     elsif space.wall > 0 then :seat_wall
     else :seat_middle
