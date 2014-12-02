@@ -233,6 +233,21 @@ def choose_near_seat_alone(door, plan, passengers)
   space_weights.max_by(&:last).first
 end
 
+def survey_objective
+  %w(person dist) # facing_wall
+  %w(stand dist)
+  %w(person stand)
+  %w(dist)
+  %w(dist sit)
+  %w(sit dist) # facing_forward
+  %w(person sit)
+  %w(person sit)
+  %w(person)
+  %w(person stand) # leg_room
+  %w(dist person stand)
+  %w(stand person)
+end
+
 # given a list of numbers, sample the list with frequencies
 # proportional to those numbers, returning the index of the
 # element selected
@@ -435,3 +450,4 @@ def display_heatmap(hash)
   single_car = hash.select{|k,v| k.car_class == car_name}
   $cv.draw_heatmap(single_car, "heatmap_#{car_name}_#{$algo}.png")
 end
+
