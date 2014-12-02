@@ -373,14 +373,15 @@ def compare_algos
   control_stats = stats_by_type(control_data)
   stop_passes_list = {
     control: ->{ control_data },
+    women: ->{ control_data.deep_select{|pass| pass.gender == 'F' } },
+    men: ->{ control_data.deep_select{|pass| pass.gender == 'M' } },
     random:  ->{ simulate_algo(si.stops, :choose_randomly) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
     #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
     trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
-    trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
-    
+    trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) },
   }
 
   res = stop_passes_list.mash do |name, algo|
@@ -400,7 +401,7 @@ def compare_algos
 
   #$algo = :control
   #$algo = :random
-  $algo = :trip_nearest_seat
+  $algo = :men
   display_heatmap(res[$algo])
 
   nil

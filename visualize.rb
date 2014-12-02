@@ -226,6 +226,8 @@ class CarVisualizer < Processing::App
   def draw_heatmap(passengers_by_stop, filename=nil)
     raise 'multiple car classes!' if passengers_by_stop.keys.map(&:car_class).uniq.size > 1
 
+    clear
+
     car = $ci.cars[passengers_by_stop.keys.first.car_class]
     passengers = passengers_by_stop.values.flatten
     dots = passengers.map(&:space).map{|s| space_to_xy(*parse_space(s))}
