@@ -166,7 +166,14 @@ end
 def choose_nearest_seat(door, plan, passengers)
   occupied, unoccupied = occupied_and_not(plan, passengers)
   
-  unoccupied.select(&:seat?).min_by { |s| manhattan_distance(door, s) }
+  nearest_seat = unoccupied.select(&:seat?).min_by { |s| manhattan_distance(door, s) }
+
+  # Choose to stand if there are no seats
+  if nearest_seat
+    nearest_seat
+  else
+    unoccupied.min_by{|s| manhattan_distance(door, s)}
+  end
 end
 
 def class_to_car(car_class)
@@ -366,12 +373,12 @@ def compare_algos
   control_stats = stats_by_type(control_data)
   stop_passes_list = {
     control: ->{ control_data },
-    #random:  ->{ simulate_algo(si.stops, :choose_randomly) },
+    random:  ->{ simulate_algo(si.stops, :choose_randomly) },
     #alonest: ->{ simulate_algo(si.stops, :choose_alonest) },
     #near_and_alone: ->{ simulate_algo(si.stops, :choose_near_and_alone) },
     #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
-    #trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
+    trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
     trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.1516]
     
   }
@@ -392,7 +399,8 @@ def compare_algos
   #display_heatmap(res[:trip_seat_alone])
 
   #$algo = :control
-  $algo = :trip_seat_alone
+  #$algo = :random
+  $algo = :trip_nearest_seat
   display_heatmap(res[$algo])
 
   nil

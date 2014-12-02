@@ -62,11 +62,16 @@ class CarVisualizer < Processing::App
   #end
 
   def setup
-    background 255
+    clear
     size (@car.width+2)*seat_size,
          (@car.height+2)*seat_size
     smooth
   end
+
+  def clear
+    background 255
+  end
+
 
   def draw_car(car)
     car.plan.each_with_index do |col, col_num|
