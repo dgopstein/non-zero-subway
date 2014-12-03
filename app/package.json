@@ -1,0 +1,12 @@
+{
+    "name": "non-zero-subway",
+    "description": "An interactive subway car",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "express": "latest"
+        "http": "latest"
+    }
+}
+
+
