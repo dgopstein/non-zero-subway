@@ -180,16 +180,15 @@ def class_to_car(car_class)
   $ci.cars[car_class]
 end
 
-
-def choose_random_near_seat_alone(door, plan, passengers)
-  choose_near_seat_alone(door, plan, passengers, 0.5)
-end
-
-# A fully comprehensive pure strategy, stochastically assigned
+# A fully comprehensive pure strategy
+# 6,8,14,1,5,4,1: [0.0790]
+# 6,8,14,1,5,4,20: [0.0580]
+# 6,8,14,1,5,4,10: [0.0579]
+# 6,8,14,1,5,4,6: [0.0574]
+# 6,8,14,1,5,4,3: [0.0355]
+# 6,8,14,1,5,4,2: [0.0190] *
 # 6,8,14,1,5,4,1: [0.0673] *
-def choose_near_seat_alone(door, plan, passengers, randomness = 0.0)
-  randomize_coeff = lambda { 1 - (randomness * rand) }
-
+def choose_near_seat_alone(door, plan, passengers)
   max_dist = 14.0
   car_dist = manhattan_distance('01a', plan.last.last)
   exp_dist = lambda do |a, b|
@@ -219,14 +218,13 @@ def choose_near_seat_alone(door, plan, passengers, randomness = 0.0)
       seat_pole = is_space_type.call(:seat_pole)
       trans_edge = is_space_type.call(:seat_trans_edge)
 
-      randomize_coeff.call * w_person * person_dist +
-      randomize_coeff.call * w_seat * sit_preference +
-      randomize_coeff.call * w_dist * walk_distance +
-      randomize_coeff.call * w_no_pole * no_pole +
-      randomize_coeff.call * w_door * stand_door +
-      randomize_coeff.call * w_seat_pole * seat_pole +
-      randomize_coeff.call * w_trans_edge * trans_edge + 
-      (1 - randomize_coeff.call) # Whim
+      w_person * person_dist +
+      w_seat * sit_preference +
+      w_dist * walk_distance +
+      w_no_pole * no_pole +
+      w_door * stand_door +
+      w_seat_pole * seat_pole +
+      w_trans_edge * trans_edge
     end
 
   space_weights = Hash[*unoccupied.zip(weights).flatten]
@@ -398,8 +396,7 @@ def compare_algos
     #nearest_seat: ->{ simulate_algo(si.stops, :choose_nearest_seat) },
     #near_seat_alone: ->{ simulate_algo(si.stops, :choose_near_seat_alone) },
     trip_nearest_seat: ->{ simulate_trips(si.trips, :choose_nearest_seat) }, # [0.1516]
-    #trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) }, # [0.0190]
-    random_seat_alone: ->{ simulate_trips(si.trips, :choose_random_near_seat_alone) },
+    trip_seat_alone: ->{ simulate_trips(si.trips, :choose_near_seat_alone) },
   }
 
   res = stop_passes_list.mash do |name, algo|
@@ -419,7 +416,7 @@ def compare_algos
 
   #$algo = :control
   #$algo = :random
-  $algo = :random_seat_alone
+  $algo = :men
   display_heatmap(res[$algo])
 
   nil
