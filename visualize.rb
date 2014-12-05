@@ -202,6 +202,16 @@ class CarVisualizer < Processing::App
     [x, y].map(&:to_i)
   end
 
+  def xy_to_space_pretty(x, y)
+    rows = (0 ... car.height)
+    cols = (0 ... car.width)
+
+    col = cols.find{|c| r_x = space_to_xy_pretty(c, 0)[0]; (r_x - x).abs < seat_size/2}
+    row = rows.find{|r| r_y = space_to_xy_pretty(0, r)[1]; (r_y - y).abs < seat_size/2}
+
+    [col, row]
+  end
+
   def space_to_xy(col, row)
     #space_to_xy_plain(col, row)
     space_to_xy_pretty(col, row)
@@ -291,21 +301,27 @@ class CarInspector < CarVisualizer
     draw_passengers(@passengers)
   end
 
-  def key_pressed(x)
-    if key == CODED
-      case keyCode
-
+  def key_pressed(event)
+    case event.keyCode
       when 37 # <
-      @history.pop
-      @passengers = @history.last
+        @history.pop
+        @passengers = @history.last
 
       when 39 # >
-      simulate_stop
-      puts "done simulating"
+        simulate_stop
+        puts "done simulating"
 
       #when 38 # ^
       #when 40 # v
-      end
     end
+  end
+
+
+  def mousePressed()
+    stroke(0)
+    fill(175)
+    rectMode(CENTER)
+    rect(mouseX,mouseY,16,16)
+    puts "Space: #{xy_to_space_pretty(mouseX, mouseY).inspect}"
   end
 end

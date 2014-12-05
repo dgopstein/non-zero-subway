@@ -1,3 +1,5 @@
+# jruby --2.0 -S irb
+
 require 'pp'
 
 DB_DIR = '/Users/dgopstein/nyu/subway/db/'
