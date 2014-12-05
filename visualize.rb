@@ -3,6 +3,16 @@ require '/Users/dgopstein/ruby-processing-heatmaps-lib/heatmaps.rb'
 
 Processing::App::SKETCH_PATH = __FILE__
 
+#http://www.colourlovers.com/palette/1930/cheer_up_emo_kid
+#PassengerColor = [78,205,196]
+#UserColor = [199,244,100]
+
+#http://www.colourlovers.com/palette/46688/fresh_cut_day
+#PassengerColor = [64,192,203]
+PassengerColor = [0,168,198]
+UserColor = [174,226,57]
+
+#TODO try something maroon maybe?
 
 class CarVisualizer < Processing::App
   include Heatmaps
@@ -218,7 +228,9 @@ class CarVisualizer < Processing::App
   end
 
   def draw_passenger(col, row)
-    ellipse(*space_to_xy(col, row), seat_size/2.0, seat_size/2.0)
+    passenger_size = seat_size / 1.8
+    stroke(96)
+    ellipse(*space_to_xy(col, row), passenger_size, passenger_size)
   end
 
   def draw_trail(col, row, door_space)
@@ -229,20 +241,23 @@ class CarVisualizer < Processing::App
   end
 
   def draw_trail_pretty(col, row, door_space)
+      stroke(64)
       door_x, door_y = space_to_xy(*parse_space(door_space))
       door_y -= seat_size/3.0
       x, y = space_to_xy(col, row)
 
-      side_offset = row.to_f / car.height < 1.0/2 ? 100 : -100
+      is_top = row.to_f / car.height < 1.0/2 ? 1 : -1
+      side_offset = 100 * is_top
+      circle_offset = seat_size / 4.0 * is_top
 
-      bezier(x, y, x, y + side_offset, door_x, door_y + 100, door_x, door_y)
+      bezier(x, y + circle_offset, x, y + side_offset, door_x, door_y + 100, door_x, door_y)
   end
 
   def draw_passengers(passengers)
     passengers.ergo.each do |passenger|
       col, row = parse_space(passenger.space)
 
-      fill 18, 102, 255
+      fill(*PassengerColor)
       draw_passenger(col, row)
 
       # draw trail
@@ -303,7 +318,7 @@ class CarInspector < CarVisualizer
     @stop_id = (@stop_id || -1) + 1
     new_passengers = passengers.dup
     doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
-    n_boarding = 7 # + rand(30)
+    n_boarding = 1 # + rand(30)
     (0...n_boarding).each do |i|
       door = doors[i % doors.length]
       # Don't let anybody sit on the user
@@ -326,7 +341,7 @@ class CarInspector < CarVisualizer
   def draw
     draw_pretty_car(car)
     draw_passengers(@passengers)
-    fill(123, 45, 67)
+    fill(*UserColor)
     draw_passenger(*@user_space) if @user_space
   end
 
