@@ -217,20 +217,37 @@ class CarVisualizer < Processing::App
     space_to_xy_pretty(col, row)
   end
 
+  def draw_passenger(col, row)
+    ellipse(*space_to_xy(col, row), seat_size/2.0, seat_size/2.0)
+  end
+
+  def draw_trail(col, row, door_space)
+      door_col, door_row = parse_space(door_space)
+      door_x, door_y = space_to_xy(door_col, door_row)
+      door_y -= seat_size/3.0
+      line(door_x, door_y, *space_to_xy(col, row))
+  end
+
+  def draw_trail_pretty(col, row, door_space)
+      door_x, door_y = space_to_xy(*parse_space(door_space))
+      door_y -= seat_size/3.0
+      x, y = space_to_xy(col, row)
+
+      side_offset = row.to_f / car.height < 1.0/2 ? 100 : -100
+
+      bezier(x, y, x, y + side_offset, door_x, door_y + 100, door_x, door_y)
+  end
+
   def draw_passengers(passengers)
-    fill 18, 102, 255
     passengers.ergo.each do |passenger|
       col, row = parse_space(passenger.space)
-      ellipse(*space_to_xy(col, row), seat_size/2.0, seat_size/2.0)
+
+      fill 18, 102, 255
+      draw_passenger(col, row)
 
       # draw trail
-      if passenger.door
-        door_col, door_row = parse_space(passenger.door.space)
-        door_x, door_y = space_to_xy(door_col, door_row)
-        door_y -= seat_size/3.0
-        line(door_x, door_y, *space_to_xy(col, row))
-      end
-
+      noFill
+      draw_trail_pretty(col, row, passenger.door.space) if passenger.door
     end
   end
 
@@ -262,7 +279,7 @@ class CarVisualizer < Processing::App
 end
 
 class CarInspector < CarVisualizer
-  attr_accessor :choice_algo, :type, :history, :passengers
+  attr_accessor :choice_algo, :type, :history, :passengers, :user_space
   def initialize(choice_algo, type)
     super()
     @choice_algo = choice_algo
@@ -278,14 +295,24 @@ class CarInspector < CarVisualizer
     smooth
   end
 
+  def col_row_to_str(col, row)
+    (col+1).to_s + ('a' .. 'z').to_a[row]
+  end
+
   def simulate_stop
     @stop_id = (@stop_id || -1) + 1
     new_passengers = passengers.dup
     doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
-    n_boarding = 3 + rand(30)
-    (0..n_boarding).each do |i|
+    n_boarding = 7 # + rand(30)
+    (0...n_boarding).each do |i|
       door = doors[i % doors.length]
-      space = choice_algo.call(door, car.plan, new_passengers)
+      # Don't let anybody sit on the user
+      occupied = if @user_space 
+          new_passengers + [Passenger.new(i, @stop_id, nil, col_row_to_str(*@user_space), nil, nil, nil)]
+        else
+          new_passengers
+        end
+      space = choice_algo.call(door, car.plan, occupied)
       space_name = space_to_str(space)
       new_passengers << Passenger.new(i, @stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
     end
@@ -299,13 +326,15 @@ class CarInspector < CarVisualizer
   def draw
     draw_pretty_car(car)
     draw_passengers(@passengers)
+    fill(123, 45, 67)
+    draw_passenger(*@user_space) if @user_space
   end
 
   def key_pressed(event)
     case event.keyCode
       when 37 # <
         @history.pop
-        @passengers = @history.last
+        @passengers = @history.last || []
 
       when 39 # >
         simulate_stop
@@ -316,12 +345,8 @@ class CarInspector < CarVisualizer
     end
   end
 
-
-  def mousePressed()
-    stroke(0)
-    fill(175)
-    rectMode(CENTER)
-    rect(mouseX,mouseY,16,16)
-    puts "Space: #{xy_to_space_pretty(mouseX, mouseY).inspect}"
+  def mousePressed
+    col_row = xy_to_space_pretty(mouseX, mouseY)
+    @user_space = col_row.all? ? col_row : nil
   end
 end
