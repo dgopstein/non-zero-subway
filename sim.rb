@@ -181,14 +181,23 @@ def class_to_car(car_class)
 end
 
 # A fully comprehensive pure strategy
-# 6,8,14,1,5,4,1: [0.0790]
-# 6,8,14,1,5,4,20: [0.0580]
-# 6,8,14,1,5,4,10: [0.0579]
-# 6,8,14,1,5,4,6: [0.0574]
-# 6,8,14,1,5,4,3: [0.0355]
-# 6,8,14,1,5,4,2: [0.0190] *
-# 6,8,14,1,5,4,1: [0.0673] *
-def choose_near_seat_alone(door, plan, passengers)
+# 22,8,14,1,5,4,1: [0.0790]
+# 22,8,14,1,5,4,20: [0.0580]
+# 22,8,14,1,5,4,10: [0.0579]
+# 22,8,14,1,5,4,6: [0.0574]
+# 22,8,14,1,5,4,3: [0.0355]
+# 22,8,14,1,5,4,2: [0.0190] *
+# 22,8,14,1,5,4,1: [0.0673]
+DefaultType = {
+  person: 22,
+  seat: 8, 
+  dist: 14,
+  no_pole: 1,
+  door: 5,
+  seat_pole: 4,
+  trans_edge: 2
+}
+def choose_near_seat_alone(door, plan, passengers, type = DefaultType)
   max_dist = 14.0
   car_dist = manhattan_distance('01a', plan.last.last)
   exp_dist = lambda do |a, b|
@@ -199,15 +208,9 @@ def choose_near_seat_alone(door, plan, passengers)
   
   weights = 
     unoccupied.map do |space|
-      w_person = 21.9
-      w_seat = 8 
-      w_dist = 14
-      w_no_pole = 1
-      w_door = 5
-      w_seat_pole = 4
-      w_trans_edge = 2
-
-      person_dist = Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
+      person_dist = if occupied.empty? then car_dist
+                    else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
+                    end
       sit_preference = space.seat? ? 1 : 0
       walk_distance = exp_dist.call(space, door)
 
@@ -218,13 +221,13 @@ def choose_near_seat_alone(door, plan, passengers)
       seat_pole = is_space_type.call(:seat_pole)
       trans_edge = is_space_type.call(:seat_trans_edge)
 
-      w_person * person_dist +
-      w_seat * sit_preference +
-      w_dist * walk_distance +
-      w_no_pole * no_pole +
-      w_door * stand_door +
-      w_seat_pole * seat_pole +
-      w_trans_edge * trans_edge
+      type[:person] * person_dist +
+      type[:seat] * sit_preference +
+      type[:dist] * walk_distance +
+      type[:no_pole] * no_pole +
+      type[:door] * stand_door +
+      type[:seat_pole] * seat_pole +
+      type[:trans_edge] * trans_edge
     end
 
   space_weights = Hash[*unoccupied.zip(weights).flatten]
@@ -451,3 +454,7 @@ def display_heatmap(hash)
   $cv.draw_heatmap(single_car, "heatmap_#{car_name}_#{$algo}.png")
 end
 
+def run_inspector
+  $cv ||= CarInspector.new(method(:choose_near_seat_alone), DefaultType)
+  $cv.play_sim()
+end

@@ -3,6 +3,7 @@ require '/Users/dgopstein/ruby-processing-heatmaps-lib/heatmaps.rb'
 
 Processing::App::SKETCH_PATH = __FILE__
 
+
 class CarVisualizer < Processing::App
   include Heatmaps
 
@@ -28,7 +29,7 @@ class CarVisualizer < Processing::App
     @passengers_by_stop = passengers_by_stop
     @heatmap = nil
 
-    @car = $ci.cars[
+    @car = ci.cars[
       passengers_by_stop.empty? ? 'R68' : stops.first.car_class
     ]
 
@@ -246,6 +247,65 @@ class CarVisualizer < Processing::App
       puts "Saving image to #{filename}"
       sleep 1
       p save(dir+'/'+filename) 
+    end
+  end
+end
+
+class CarInspector < CarVisualizer
+  attr_accessor :choice_algo, :type, :history, :passengers
+  def initialize(choice_algo, type)
+    super()
+    @choice_algo = choice_algo
+    @type = type
+    @history = []
+    @passengers = []
+  end
+
+  def setup
+    clear
+    size (@car.width+2)*seat_size,
+         (@car.height+2)*seat_size + 200
+    smooth
+  end
+
+  def simulate_stop
+    @stop_id = (@stop_id || -1) + 1
+    new_passengers = passengers.dup
+    doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
+    n_boarding = 3 + rand(30)
+    (0..n_boarding).each do |i|
+      door = doors[i % doors.length]
+      space = choice_algo.call(door, car.plan, new_passengers)
+      space_name = space_to_str(space)
+      new_passengers << Passenger.new(i, @stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
+    end
+    @history << new_passengers
+    @passengers = new_passengers
+  end
+
+  def play_sim
+  end
+
+  def draw
+    draw_pretty_car(car)
+    draw_passengers(@passengers)
+  end
+
+  def key_pressed(x)
+    if key == CODED
+      case keyCode
+
+      when 37 # <
+      @history.pop
+      @passengers = @history.last
+
+      when 39 # >
+      simulate_stop
+      puts "done simulating"
+
+      #when 38 # ^
+      #when 40 # v
+      end
     end
   end
 end
