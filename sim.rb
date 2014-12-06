@@ -199,37 +199,50 @@ DefaultType = {
   seat_pole: 4,
   trans_edge: 2
 }
-def choose_near_seat_alone(door, plan, passengers, type = DefaultType)
+
+def space_cost(space_values_algo, type, plan, occupied, door, space)
+  values = space_values_algo.call(plan, occupied, door, space)
+  vals_weights = values.deep_zip(type)
+
+  vals_weights.values.map{|v, w| v * w}.sum
+end
+
+Near_seat_alone_values = lambda do |plan, occupied, door, space|
   max_dist = 14.0
   car_dist = manhattan_distance('01a', plan.last.last)
   exp_dist = lambda do |a, b|
     [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
 
+  person_dist = if occupied.empty? then car_dist
+                else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
+                end
+  sit_preference = space.seat? ? 1 : 0
+  walk_distance = exp_dist.call(space, door)
+
+  is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
+
+  no_pole = 1 - is_space_type.call(:floor)
+  stand_door = is_space_type.call(:floor_door)
+  seat_pole = is_space_type.call(:seat_pole)
+  trans_edge = is_space_type.call(:seat_trans_edge)
+
+  {
+    person: person_dist,
+    seat: sit_preference,
+    dist: walk_distance,
+    no_pole: no_pole,
+    door: stand_door,
+    seat_pole: seat_pole,
+    trans_edge: trans_edge
+  }
+end
+
+def choose_near_seat_alone(door, plan, passengers, type = DefaultType)
   occupied, unoccupied = occupied_and_not(plan, passengers)
-  
   weights = 
     unoccupied.map do |space|
-      person_dist = if occupied.empty? then car_dist
-                    else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
-                    end
-      sit_preference = space.seat? ? 1 : 0
-      walk_distance = exp_dist.call(space, door)
-
-      is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
-
-      no_pole = 1 - is_space_type.call(:floor)
-      stand_door = is_space_type.call(:floor_door)
-      seat_pole = is_space_type.call(:seat_pole)
-      trans_edge = is_space_type.call(:seat_trans_edge)
-
-      type[:person] * person_dist +
-      type[:seat] * sit_preference +
-      type[:dist] * walk_distance +
-      type[:no_pole] * no_pole +
-      type[:door] * stand_door +
-      type[:seat_pole] * seat_pole +
-      type[:trans_edge] * trans_edge
+      space_cost(Near_seat_alone_values, type, plan, occupied, door, space)
     end
 
   space_weights = Hash[*unoccupied.zip(weights).flatten]
