@@ -197,7 +197,7 @@ DefaultType = {
   door: 5,
   seat_pole: 4,
   trans_edge: 2,
-  no_pole: 1
+  anchored: 1
 }
 
 def space_cost(space_values_algo, type, plan, occupied, door, space)
@@ -222,7 +222,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
 
   is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
 
-  no_pole = 1 - is_space_type.call(:floor)
+  anchored = 1 - is_space_type.call(:floor)
   stand_door = is_space_type.call(:floor_door)
   seat_pole = is_space_type.call(:seat_pole)
   trans_edge = is_space_type.call(:seat_trans_edge)
@@ -234,7 +234,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
     door: stand_door,
     seat_pole: seat_pole,
     trans_edge: trans_edge,
-    no_pole: no_pole
+    anchored: anchored
   }
 end
 

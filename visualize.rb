@@ -12,6 +12,8 @@ Processing::App::SKETCH_PATH = __FILE__
 PassengerColor = [0,168,198]
 UserColor = [174,226,57]
 
+$Arial12 = nil
+
 #TODO try something maroon maybe?
 
 class CarVisualizer < Processing::App
@@ -304,6 +306,7 @@ class CarInspector < CarVisualizer
   end
 
   def setup
+    $Arial12 = createFont("Arial", 12, true )
     clear
     size (@car.width+2)*seat_size,
          (@car.height+2)*seat_size + 250
@@ -342,7 +345,7 @@ class CarInspector < CarVisualizer
     origin_x = 100
     origin_y = 500
 
-    bar_width = 40
+    bar_width = 50
     bar_height = -150
 
     pad = 4
@@ -350,6 +353,13 @@ class CarInspector < CarVisualizer
     max_weight = weights.values.max.to_f
 
     x_offset = 0
+
+    # blank words
+    fill(255)
+    stroke(255)
+    rect(origin_x - 2*pad, origin_y + 40, 600, -30)
+    textAlign(CENTER)
+
     weights.deep_zip(vals).map do |key, (weight, val)|
       weight_fract = weight / max_weight
 
@@ -364,8 +374,8 @@ class CarInspector < CarVisualizer
 
       # name
       fill(76, 54, 98)
-      textSize(12)
-      text(key.to_s, origin_x + x_offset - pad, origin_y + 30)
+      textSize(14)
+      text(key.to_s, origin_x + x_offset + 25, origin_y + 30)
 
       x_offset += 1.5 * bar_width
     end
