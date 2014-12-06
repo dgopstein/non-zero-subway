@@ -101,21 +101,6 @@ def choose_randomly(door, plan, passengers)
   unoccupied.sample
 end
 
-def space_distance(s1, s2)
-  c1, r1 = parse_space(s1)
-  c2, r2 = parse_space(s2)
-
-  [(c2 - c1).abs, (r2 - r1).abs]
-end
-
-def longitudinal_distance(s1, s2)
-  space_distance(s1, s2).first
-end
-
-def manhattan_distance(s1, s2)
-  space_distance(s1, s2).sum
-end
-
 # Go to the closest available seat
 def choose_nearest(door, plan, passengers)
   occupied, unoccupied = occupied_and_not(plan, passengers)

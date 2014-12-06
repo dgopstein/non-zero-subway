@@ -229,7 +229,8 @@ class CarVisualizer < Processing::App
     space_to_xy_pretty(col, row)
   end
 
-  def draw_passenger(col, row)
+  def draw_passenger(space)
+    col, row = parse_space(space)
     passenger_size = seat_size / 1.8
     stroke(96)
     ellipse(*space_to_xy(col, row), passenger_size, passenger_size)
@@ -260,7 +261,7 @@ class CarVisualizer < Processing::App
       col, row = parse_space(passenger.space)
 
       fill(*PassengerColor)
-      draw_passenger(col, row)
+      draw_passenger(passenger.space)
 
       # draw trail
       noFill
@@ -326,7 +327,7 @@ class CarInspector < CarVisualizer
       door = doors[i % doors.length]
       # Don't let anybody sit on the user
       occupied = if @user_space 
-          new_passengers + [Passenger.new(i, @stop_id, nil, col_row_to_str(*@user_space), nil, nil, nil)]
+          new_passengers + [Passenger.new(i, @stop_id, nil, @user_space.space, nil, nil, nil)]
         else
           new_passengers
         end
@@ -369,11 +370,11 @@ class CarInspector < CarVisualizer
       rect(origin_x + x_offset, origin_y, bar_width, bar_height * weight_fract - pad)
 
       # value
-      fill(98, 76, 54)
+      fill(*(@inspect_space ? PassengerColor : UserColor))
       rect(origin_x + x_offset + pad, origin_y, bar_width - 2*pad, bar_height * weight_fract * val)
 
       # name
-      fill(76, 54, 98)
+      fill(0)
       textSize(14)
       text(key.to_s, origin_x + x_offset + 25, origin_y + 30)
 
@@ -386,7 +387,7 @@ class CarInspector < CarVisualizer
     draw_pretty_car(car)
     draw_passengers(@passengers)
     fill(*UserColor)
-    draw_passenger(*@user_space) if @user_space
+    draw_passenger(@user_space) if @user_space
     draw_user_values(DefaultType, @user_space_values) if @user_space_values
   end
 
@@ -409,7 +410,17 @@ class CarInspector < CarVisualizer
 
   def mousePressed
     col_row = xy_to_space_pretty(mouseX, mouseY)
-    @user_space = col_row.all? ? col_row : nil
+    if col_row.all?
+      space = col_row_to_space(col_row)
+      if @passengers.map(&:space).include?(space.space)
+        @inspect_space = space
+      else
+        @user_space = space
+        @inspect_space = nil
+      end
+    else
+      @user_space = nil
+    end
     reset_space_values
   end
 
@@ -418,12 +429,15 @@ class CarInspector < CarVisualizer
   end
 
   def reset_space_values
-    begin
-      us = col_row_to_space(@user_space)
-      @user_space_values = Near_seat_alone_values.call(car.plan, @passengers, us, us)
+    space = @inspect_space || @user_space
+    passes = (@passengers + [@user_space].compact).reject{|pa| pa.space == space.space}
+    #begin
+      nearest_door = car.nearest_door(@user_space)
+      @user_space_values = Near_seat_alone_values.call(car.plan, passes, nearest_door, space)
       clear
-    rescue
-      puts "#{@user_space.inspect} outside of car"
-    end
+    #rescue StandardError => e
+    #  p e
+    #  puts "#{space.col_row} outside of car"
+    #end
   end
 end

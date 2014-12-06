@@ -3,6 +3,21 @@ require 'csv'
 require 'csv_importer.rb'
 require 'passenger.rb'
 
+def space_distance(s1, s2)
+  c1, r1 = parse_space(s1)
+  c2, r2 = parse_space(s2)
+
+  [(c2 - c1).abs, (r2 - r1).abs]
+end
+
+def longitudinal_distance(s1, s2)
+  space_distance(s1, s2).first
+end
+
+def manhattan_distance(s1, s2)
+  space_distance(s1, s2).sum
+end
+
 class Car
   attr_accessor :name, :plan, :lookup_tbl
 
@@ -28,12 +43,24 @@ class Car
     plan.flatten.select{|space| !space.ergo.seat? && space.ergo.door.ergo.nonzero? }
   end
 
+  def top_doors
+    doors.select{|d| d.space[-1] == 'a'}
+  end
+
+  def nearest_door(s)
+    top_doors.min_by{|d| manhattan_distance(s, d)}
+  end
+
   def to_s
     @name
   end
 end
 
 Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule) do
+  def col_row
+    parse_space(space)
+  end
+
   def seat?
     position > 0
   end
