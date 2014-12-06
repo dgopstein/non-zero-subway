@@ -192,12 +192,12 @@ end
 # 22,8,14,1,5,4,1: [0.0673]
 DefaultType = {
   person: 22,
-  seat: 8, 
   dist: 14,
-  no_pole: 1,
+  seat: 8, 
   door: 5,
   seat_pole: 4,
-  trans_edge: 2
+  trans_edge: 2,
+  no_pole: 1
 }
 
 def space_cost(space_values_algo, type, plan, occupied, door, space)
@@ -214,7 +214,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
     [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
 
-  person_dist = if occupied.empty? then car_dist
+  person_dist = if occupied.empty? then 1.0
                 else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
                 end
   sit_preference = space.seat? ? 1 : 0
@@ -229,12 +229,12 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
 
   {
     person: person_dist,
-    seat: sit_preference,
     dist: walk_distance,
-    no_pole: no_pole,
+    seat: sit_preference,
     door: stand_door,
     seat_pole: seat_pole,
-    trans_edge: trans_edge
+    trans_edge: trans_edge,
+    no_pole: no_pole
   }
 end
 

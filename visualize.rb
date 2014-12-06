@@ -306,7 +306,7 @@ class CarInspector < CarVisualizer
   def setup
     clear
     size (@car.width+2)*seat_size,
-         (@car.height+2)*seat_size + 200
+         (@car.height+2)*seat_size + 250
     smooth
   end
 
@@ -338,11 +338,46 @@ class CarInspector < CarVisualizer
   def play_sim
   end
 
+  def draw_user_values(weights, vals)
+    origin_x = 100
+    origin_y = 500
+
+    bar_width = 40
+    bar_height = -150
+
+    pad = 4
+
+    max_weight = weights.values.max.to_f
+
+    x_offset = 0
+    weights.deep_zip(vals).map do |key, (weight, val)|
+      weight_fract = weight / max_weight
+
+      # weight
+      noFill
+      stroke(0)
+      rect(origin_x + x_offset, origin_y, bar_width, bar_height * weight_fract - pad)
+
+      # value
+      fill(98, 76, 54)
+      rect(origin_x + x_offset + pad, origin_y, bar_width - 2*pad, bar_height * weight_fract * val)
+
+      # name
+      fill(76, 54, 98)
+      textSize(12)
+      text(key.to_s, origin_x + x_offset - pad, origin_y + 30)
+
+      x_offset += 1.5 * bar_width
+    end
+
+  end
+
   def draw
     draw_pretty_car(car)
     draw_passengers(@passengers)
     fill(*UserColor)
     draw_passenger(*@user_space) if @user_space
+    draw_user_values(DefaultType, @user_space_values) if @user_space_values
   end
 
   def key_pressed(event)
@@ -350,9 +385,11 @@ class CarInspector < CarVisualizer
       when 37 # <
         @history.pop
         @passengers = @history.last || []
+        reset_space_values
 
       when 39 # >
         simulate_stop
+        reset_space_values
         puts "done simulating"
 
       #when 38 # ^
@@ -363,5 +400,20 @@ class CarInspector < CarVisualizer
   def mousePressed
     col_row = xy_to_space_pretty(mouseX, mouseY)
     @user_space = col_row.all? ? col_row : nil
+    reset_space_values
+  end
+
+  def col_row_to_space(col_row, car=ci.cars['R68'])
+    car.plan[col_row[0]][col_row[1]]
+  end
+
+  def reset_space_values
+    begin
+      us = col_row_to_space(@user_space)
+      @user_space_values = Near_seat_alone_values.call(car.plan, @passengers, us, us)
+      clear
+    rescue
+      puts "#{@user_space.inspect} outside of car"
+    end
   end
 end
