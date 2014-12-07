@@ -326,12 +326,12 @@ class CarInspector < CarVisualizer
     (0...n_boarding).each do |i|
       door = doors[i % doors.length]
       # Don't let anybody sit on the user
-      occupied = if @user_space 
-          new_passengers + [Passenger.new(i, @stop_id, nil, @user_space.space, nil, nil, nil)]
-        else
-          new_passengers
-        end
-      space = choice_algo.call(door, car.plan, occupied)
+      #occupied = if @user_space 
+      #    new_passengers + []
+      #  else
+      #    new_passengers
+      #  end
+      space = choice_algo.call(door, car.plan, new_passengers)#occupied)
       space_name = space_to_str(space)
       new_passengers << Passenger.new(i, @stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
     end
@@ -370,7 +370,7 @@ class CarInspector < CarVisualizer
       rect(origin_x + x_offset, origin_y, bar_width, bar_height * weight_fract - pad)
 
       # value
-      fill(*(@inspect_space ? PassengerColor : UserColor))
+      fill(*UserColor)
       rect(origin_x + x_offset + pad, origin_y, bar_width - 2*pad, bar_height * weight_fract * val)
 
       # name
@@ -412,11 +412,11 @@ class CarInspector < CarVisualizer
     col_row = xy_to_space_pretty(mouseX, mouseY)
     if col_row.all?
       space = col_row_to_space(col_row)
-      if @passengers.map(&:space).include?(space.space)
-        @inspect_space = space
-      else
-        @user_space = space
-        @inspect_space = nil
+      @user_space = space
+      pass = Passenger.new(0, @stop_id, nil, @user_space.space, nil, nil, nil).tap{ |pa| pa.door = car.nearest_door(pa) }
+      if !@passengers.map(&:space).include?(space.space)
+        @passengers = (passengers + [pass])
+        @history << @passengers
       end
     else
       @user_space = nil
@@ -429,15 +429,14 @@ class CarInspector < CarVisualizer
   end
 
   def reset_space_values
-    space = @inspect_space || @user_space
-    passes = (@passengers + [@user_space].compact).reject{|pa| pa.space == space.space}
-    #begin
-      nearest_door = car.nearest_door(@user_space)
-      @user_space_values = Near_seat_alone_values.call(car.plan, passes, nearest_door, space)
-      clear
-    #rescue StandardError => e
-    #  p e
-    #  puts "#{space.col_row} outside of car"
-    #end
+    passes = @passengers.dup
+    passes.reject!{|pa| pa.space == @user_space.space} if @user_space
+    begin
+     @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
+     clear
+    rescue StandardError => e
+      p e
+      puts "#{@user_space} outside of car"
+    end
   end
 end

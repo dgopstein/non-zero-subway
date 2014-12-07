@@ -48,7 +48,7 @@ class Car
   end
 
   def nearest_door(s)
-    top_doors.min_by{|d| manhattan_distance(s, d)}
+    top_doors.min_by{|d| manhattan_distance(s.space, d.space)}
   end
 
   def to_s
