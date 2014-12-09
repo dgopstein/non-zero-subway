@@ -112,6 +112,13 @@ class CarImporter
   def initialize(filename)
     super(filename)
     @cars = parse_csv(@csv)
+    @cars['R68_section'] = sectionalize(@cars['R68'])
+  end
+
+  def sectionalize(car)
+    Car.new(car.name+'_section').tap do |new_car|
+      new_car.plan = car.plan.take_while{|r| r.first rescue true }
+    end
   end
 
   def parse_csv(csv)

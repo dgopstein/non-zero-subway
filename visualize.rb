@@ -188,7 +188,7 @@ class CarVisualizer < Processing::App
 
   def space_to_xy_pretty(col, row)
     x = y = 0
-    if car.name == 'R68'
+    if car.name.starts_with?('R68')
       transverse_legroom = 25
       margin = seat_size+3
       y_scale = seat_size - 2
@@ -304,6 +304,7 @@ class CarInspector < CarVisualizer
     @type = type
     @history = []
     @passengers = []
+    @car = ci.cars['R68_section']
   end
 
   def setup
@@ -424,7 +425,7 @@ class CarInspector < CarVisualizer
     reset_space_values
   end
 
-  def col_row_to_space(col_row, car=ci.cars['R68'])
+  def col_row_to_space(col_row, car=@car)
     car.plan[col_row[0]][col_row[1]]
   end
 
