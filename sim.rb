@@ -181,7 +181,7 @@ DefaultType = {
   seat: 8, 
   door: 5,
   seat_pole: 4,
-  trans_edge: 2,
+  nook: 2,
   anchored: 1
 }
 
@@ -210,7 +210,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
   anchored = 1 - is_space_type.call(:floor)
   stand_door = is_space_type.call(:floor_door)
   seat_pole = is_space_type.call(:seat_pole)
-  trans_edge = is_space_type.call(:seat_trans_edge)
+  nook = is_space_type.call(:seat_nook)
 
   {
     person: person_dist,
@@ -218,7 +218,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
     seat: sit_preference,
     door: stand_door,
     seat_pole: seat_pole,
-    trans_edge: trans_edge,
+    nook: nook,
     anchored: anchored
   }
 end
@@ -369,7 +369,7 @@ end
 
 def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   new_passengers = passengers.dup
-  stop_id = if Fixnum === stop then stop else stop.id end
+  stop_id = if stop.nil? || Fixnum === stop then stop else stop.id end
   door_row = stop_id.even? ? 'a' : ('a'..'z').to_a[car.height - 1]
 
   doors = car.doors.select{|d| d.space[-1] == door_row} # only doors facing one direction

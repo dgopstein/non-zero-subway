@@ -18,6 +18,7 @@ def manhattan_distance(s1, s2)
   space_distance(s1, s2).sum
 end
 
+
 class Car
   attr_accessor :name, :plan, :lookup_tbl
 
@@ -43,12 +44,36 @@ class Car
     plan.flatten.select{|space| !space.ergo.seat? && space.ergo.door.ergo.nonzero? }
   end
 
+  def bottom_row
+    ('a'..'z').to_a[height - 1]
+  end
+
   def top_doors
     doors.select{|d| d.space[-1] == 'a'}
   end
 
-  def nearest_door(s)
+  def bottom_doors
+    doors.select{|d| d.space[-1] == bottom_row}
+  end
+
+  def top?(s)
+    row = 
+      if s.is_a?(String)
+        parse_space(s).last
+      else
+        s
+      end
+    
+    row.to_f / height < 1.0/2
+  end
+
+  def nearest_top_door(s)
     top_doors.min_by{|d| manhattan_distance(s.space, d.space)}
+  end
+
+  def nearest_door(s)
+    ds = top?(s.space) ? top_doors : bottom_doors
+    ds.min_by{|d| manhattan_distance(s.space, d.space)}
   end
 
   def to_s
@@ -69,6 +94,7 @@ Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :le
   def trans_edge?
     [1, 4].include?(perpendicular)
   end
+  alias_method :nook?, :trans_edge?
 end
 
 def space_type(space_name, car)
@@ -83,7 +109,7 @@ def space_type(space_name, car)
 
   if space.position > 0
     if space.door > 0 then :seat_door
-    elsif space.trans_edge? then :seat_trans_edge
+    elsif space.nook? then :seat_nook
     elsif space.seat_pole > 0 then :seat_pole
     elsif space.wall > 0 then :seat_wall
     else :seat_middle

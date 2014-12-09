@@ -36,13 +36,13 @@ class CarVisualizer < Processing::App
     @car = c
   end
 
-  def initialize(passengers_by_stop = {})
+  def initialize(passengers_by_stop = {}, car_name = 'R68')
     @stop_idx = 0
     @passengers_by_stop = passengers_by_stop
     @heatmap = nil
 
     @car = ci.cars[
-      passengers_by_stop.empty? ? 'R68' : stops.first.car_class
+      passengers_by_stop.empty? ? car_name : stops.first.car_class
     ]
 
     super(x: 40, y: 30) # what does this mean?
@@ -243,8 +243,8 @@ class CarVisualizer < Processing::App
       line(door_x, door_y, *space_to_xy(col, row))
   end
 
+
   def draw_trail_pretty(col, row, door_space)
-      def top?(row); row.to_f / car.height < 1.0/2 ? 1 : -1; end
 
       trail_weight = 75
 
@@ -253,11 +253,13 @@ class CarVisualizer < Processing::App
       door_x, door_y = space_to_xy(door_row, door_col)
       x, y = space_to_xy(col, row)
 
-      side_offset = trail_weight * top?(row)
-      circle_offset = seat_size / 4.0 * top?(row)
+      top_weight = car.top?(row) ? 1 : -1
+      side_offset = trail_weight * top_weight
+      circle_offset = seat_size / 4.0 * top_weight
 
-      door_offset = trail_weight * top?(door_col)
-      door_circle_offset = -seat_size / 4.0 * top?(door_col)
+      door_top_weight = car.top?(door_col) ? 1 : -1
+      door_offset = trail_weight * door_top_weight
+      door_circle_offset = -seat_size / 4.0 * door_top_weight
 
       bezier(x, y + circle_offset, x, y + side_offset, door_x, door_y + door_offset, door_x, door_y + door_circle_offset)
   end
@@ -302,22 +304,25 @@ class CarVisualizer < Processing::App
   end
 end
 
+ValuesHeight = 250
+CostHeight = 250
+
 class CarInspector < CarVisualizer
   attr_accessor :choice_algo, :type, :history, :passengers, :user_space
   def initialize(choice_algo, type)
-    super()
+    super({}, car_name = 'R68_section')
     @choice_algo = choice_algo
     @type = type
     @history = []
     @passengers = []
-    @car = ci.cars['R68_section']
+    @stop_id = 0
   end
 
   def setup
     $Arial12 = createFont("Arial", 12, true )
     clear
     size (@car.width+2)*seat_size,
-         (@car.height+2)*seat_size + 250
+         (@car.height+2)*seat_size + ValuesHeight + CostHeight
     smooth
   end
 
@@ -325,12 +330,9 @@ class CarInspector < CarVisualizer
     (col+1).to_s + ('a' .. 'z').to_a[row]
   end
 
-  def inc_stop_id
-    @stop_id = (@stop_id || -1) + 1
-  end
-
   def simulate_stop
-    _, @passengers = simulate_trip_stop(car, inc_stop_id, @passengers, n_boarding = 2, choice_algo)
+    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding = 2, choice_algo)
+    @stop_id += 1
 
     @history << @passengers
   end
@@ -339,24 +341,42 @@ class CarInspector < CarVisualizer
   end
 
   def draw_costs(costs)
-    origin_x = 300
-    origin_y = 400
+    origin_x = 40
+    origin_y = 600
+    clear_rect(origin_x, origin_y, 200, 300)
 
+    x_inc = 40
     x_offset = 0
     costs.each do |cost|
       fill(0)
       textSize(14)
-      text(cost.round(1), origin_x + x_offset + 25, origin_y)
+      text('%2.1f' % cost, origin_x + x_offset + 25, origin_y)
 
-      x_offset += 60
+      x_offset += x_inc
     end
+
+    x_offset = 0
+    noFill();
+    stroke(0);
+    beginShape();
+    costs.each do |cost|
+      curveVertex(origin_x + x_offset, origin_y + 200 - 3*cost)
+      x_offset += x_inc
+    end
+    endShape();
+  end
+
+  def clear_rect(x, y, w, h)
+    fill(255)
+    stroke(255)
+    rect(x, y, w, h)
   end
 
   def draw_user_values(weights, vals)
-    origin_x = 100
+    origin_x = 40
     origin_y = 500
 
-    bar_width = 50
+    bar_width = 35
     bar_height = -150
 
     pad = 4
@@ -366,9 +386,7 @@ class CarInspector < CarVisualizer
     x_offset = 0
 
     # blank words
-    fill(255)
-    stroke(255)
-    rect(origin_x - 2*pad, origin_y + 40, 600, -30)
+    clear_rect(origin_x - 2*pad, origin_y + 40, 600, -30)
     textAlign(CENTER)
 
     weights.deep_zip(vals).map do |key, (weight, val)|
@@ -385,8 +403,8 @@ class CarInspector < CarVisualizer
 
       # name
       fill(0)
-      textSize(14)
-      text(key.to_s, origin_x + x_offset + 25, origin_y + 30)
+      textSize(11)
+      text(key.to_s, origin_x + x_offset + 17, origin_y + 30)
 
       x_offset += 1.5 * bar_width
     end
@@ -407,6 +425,7 @@ class CarInspector < CarVisualizer
       when 37 # <
         @history.pop
         @passengers = @history.last || []
+        @user_space = nil if @user_space && !@passengers.map(&:space).include?(@user_space.space)
         reset_space_values
 
       when 39 # >
@@ -441,22 +460,24 @@ class CarInspector < CarVisualizer
 
   def predict_future(value_algo, choice_algo, space, passes, total_borders) 
     stop_id = @stop_id
-    future_passes = passes.dup
+    future_passes = reject_space(passes, space)
     (0...total_borders).map do |i|
-      _, future_passes = simulate_trip_stop(car, stop_id, future_passes, n_boarding = 1, choice_algo)
-      p space
-      p passes.map(&:space)
-      p space
+      _, future_passes = simulate_trip_stop(car, stop_id, future_passes + [space], n_boarding = 1, choice_algo)
+      future_passes = reject_space(future_passes, space)
       values = Near_seat_alone_values.call(car.plan, future_passes, car.nearest_door(space), space)
-      p values
       values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum
     end
   end
 
-  def reset_space_values
-    passes = @passengers.dup.tap do |pas|
-      pas.reject!{|pa| pa.space == @user_space.space} if @user_space
+  def reject_space(passes, space)
+    space_str = space && !space.is_a?(String) ? space.space : space
+    passes.dup.tap do |pas|
+      pas.reject!{|pa| pa.space == space_str}
     end
+  end
+
+  def reset_space_values
+    passes = reject_space(@passengers, @user_space)
     if @user_space
       @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
       @costs = predict_future(Near_seat_alone_values, choice_algo, @user_space, passes, 10)
