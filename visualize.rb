@@ -325,11 +325,12 @@ class CarInspector < CarVisualizer
     (col+1).to_s + ('a' .. 'z').to_a[row]
   end
 
-  def simulate_stop
+  def inc_stop_id
     @stop_id = (@stop_id || -1) + 1
-    n_boarding = 2
+  end
 
-    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding, choice_algo)
+  def simulate_stop
+    _, @passengers = simulate_trip_stop(car, inc_stop_id, @passengers, n_boarding = 2, choice_algo)
 
     @history << @passengers
   end
@@ -345,9 +346,9 @@ class CarInspector < CarVisualizer
     costs.each do |cost|
       fill(0)
       textSize(14)
-      text(cost, origin_x + x_offset + 25, origin_y)
+      text(cost.round(1), origin_x + x_offset + 25, origin_y)
 
-      x_offset += 20
+      x_offset += 60
     end
   end
 
@@ -438,16 +439,28 @@ class CarInspector < CarVisualizer
     car.plan[col_row[0]][col_row[1]]
   end
 
+  def predict_future(value_algo, choice_algo, space, passes, total_borders) 
+    stop_id = @stop_id
+    future_passes = passes.dup
+    (0...total_borders).map do |i|
+      _, future_passes = simulate_trip_stop(car, stop_id, future_passes, n_boarding = 1, choice_algo)
+      p space
+      p passes.map(&:space)
+      p space
+      values = Near_seat_alone_values.call(car.plan, future_passes, car.nearest_door(space), space)
+      p values
+      values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum
+    end
+  end
+
   def reset_space_values
-    passes = @passengers.dup
-    passes.reject!{|pa| pa.space == @user_space.space} if @user_space
-    begin
-     @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
-     @costs = [@user_space_values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum]
-     clear
-    rescue StandardError => e
-      p e
-      puts "#{@user_space} outside of car"
+    passes = @passengers.dup.tap do |pas|
+      pas.reject!{|pa| pa.space == @user_space.space} if @user_space
+    end
+    if @user_space
+      @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
+      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_space, passes, 10)
+      clear
     end
   end
 end
