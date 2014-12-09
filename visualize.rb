@@ -244,16 +244,22 @@ class CarVisualizer < Processing::App
   end
 
   def draw_trail_pretty(col, row, door_space)
+      def top?(row); row.to_f / car.height < 1.0/2 ? 1 : -1; end
+
+      trail_weight = 75
+
       stroke(64)
-      door_x, door_y = space_to_xy(*parse_space(door_space))
-      door_y -= seat_size/3.0
+      door_row, door_col = parse_space(door_space)
+      door_x, door_y = space_to_xy(door_row, door_col)
       x, y = space_to_xy(col, row)
 
-      is_top = row.to_f / car.height < 1.0/2 ? 1 : -1
-      side_offset = 100 * is_top
-      circle_offset = seat_size / 4.0 * is_top
+      side_offset = trail_weight * top?(row)
+      circle_offset = seat_size / 4.0 * top?(row)
 
-      bezier(x, y + circle_offset, x, y + side_offset, door_x, door_y + 100, door_x, door_y)
+      door_offset = trail_weight * top?(door_col)
+      door_circle_offset = -seat_size / 4.0 * top?(door_col)
+
+      bezier(x, y + circle_offset, x, y + side_offset, door_x, door_y + door_offset, door_x, door_y + door_circle_offset)
   end
 
   def draw_passengers(passengers)
@@ -321,26 +327,28 @@ class CarInspector < CarVisualizer
 
   def simulate_stop
     @stop_id = (@stop_id || -1) + 1
-    new_passengers = passengers.dup
-    doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
-    n_boarding = 1 # + rand(30)
-    (0...n_boarding).each do |i|
-      door = doors[i % doors.length]
-      # Don't let anybody sit on the user
-      #occupied = if @user_space 
-      #    new_passengers + []
-      #  else
-      #    new_passengers
-      #  end
-      space = choice_algo.call(door, car.plan, new_passengers)#occupied)
-      space_name = space_to_str(space)
-      new_passengers << Passenger.new(i, @stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
-    end
-    @history << new_passengers
-    @passengers = new_passengers
+    n_boarding = 2
+
+    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding, choice_algo)
+
+    @history << @passengers
   end
 
   def play_sim
+  end
+
+  def draw_costs(costs)
+    origin_x = 300
+    origin_y = 400
+
+    x_offset = 0
+    costs.each do |cost|
+      fill(0)
+      textSize(14)
+      text(cost, origin_x + x_offset + 25, origin_y)
+
+      x_offset += 20
+    end
   end
 
   def draw_user_values(weights, vals)
@@ -390,6 +398,7 @@ class CarInspector < CarVisualizer
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
     draw_user_values(DefaultType, @user_space_values) if @user_space_values
+    draw_costs(@costs) if @costs
   end
 
   def key_pressed(event)
@@ -434,6 +443,7 @@ class CarInspector < CarVisualizer
     passes.reject!{|pa| pa.space == @user_space.space} if @user_space
     begin
      @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
+     @costs = [@user_space_values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum]
      clear
     rescue StandardError => e
       p e

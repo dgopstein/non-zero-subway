@@ -369,13 +369,16 @@ end
 
 def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   new_passengers = passengers.dup
-  doors = car.doors.select{|d| d.space[-1] == 'a'} # only doors facing one direction
+  stop_id = if Fixnum === stop then stop else stop.id end
+  door_row = stop_id.even? ? 'a' : ('a'..'z').to_a[car.height - 1]
 
-  (0..n_boarding).each do |i|
+  doors = car.doors.select{|d| d.space[-1] == door_row} # only doors facing one direction
+
+  (0...n_boarding).each do |i|
     door = doors[i % doors.length]
     space = choice_algo.call(door, car.plan, new_passengers)
     space_name = space_to_str(space)
-    new_passengers << Passenger.new(i, stop.id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
+    new_passengers << Passenger.new(i, stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
   end
 
   [stop, new_passengers]
