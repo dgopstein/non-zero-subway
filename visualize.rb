@@ -350,27 +350,30 @@ class CarInspector < CarVisualizer
   def draw_costs(costs)
     origin_x = 40
     origin_y = 600
-    clear_rect(origin_x, origin_y - 50, 400, 500)
+    clear_rect(origin_x - 50 , origin_y - 50, 500, 600)
 
-    x_inc = 40
-    x_offset = 0
+    plot_offset_y = 150
+    text_offset_y = 170
+
+    x_inc = 20
+    x_offset = -20
     costs.each do |cost|
       fill(0)
-      textSize(14)
-      text('%2.1f' % cost, origin_x + x_offset + 25, origin_y)
+      textSize(11)
+      text('%2.0f' % cost, origin_x + x_offset + 25, origin_y + text_offset_y)
 
       x_offset += x_inc
     end
 
-    plot_offset_y = 200
-    #
+    x_offset = -15
+
     # draw current x cursor
     stroke(200, 50, 50)
-    cursor_x = origin_x + x_inc * @passengers.size
-    line(cursor_x, origin_y + plot_offset_y, cursor_x, origin_y + plot_offset_y - 150)
+    strokeWeight(2)
+    cursor_x = origin_x + x_offset + x_inc * @passengers.size
+    line(cursor_x, origin_y + plot_offset_y, cursor_x, origin_y + plot_offset_y - 150) if @costs
 
     # draw line plot
-    x_offset = 0
     noFill();
     stroke(0);
     beginShape();
@@ -382,6 +385,7 @@ class CarInspector < CarVisualizer
     curveVertex(origin_x + x_offset+1, origin_y + plot_offset_y - 3*(costs.last||MaxCost))
     curveVertex(origin_x + x_offset+2, origin_y + plot_offset_y - 3*(costs.last||MaxCost))
     endShape();
+    strokeWeight(1)
 
   end
 
@@ -524,7 +528,7 @@ class CarInspector < CarVisualizer
     passes = reject_space(@passengers, @user_space)
     if @user_space
       @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
-      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_pass, passes, 10)
+      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_pass, passes, 18)
       clear
     end
   end
