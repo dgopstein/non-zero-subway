@@ -261,7 +261,12 @@ class CarVisualizer < Processing::App
       door_offset = trail_weight * door_top_weight
       door_circle_offset = -seat_size / 4.0 * door_top_weight
 
-      bezier(x, y + circle_offset, x, y + side_offset, door_x, door_y + door_offset, door_x, door_y + door_circle_offset)
+      door_x_jitter = (13 * col + 7 * row + 3) % 23
+
+      bezier(x, y + circle_offset,
+             x, y + side_offset,
+             door_x, door_y + door_offset,
+             door_x + door_x_jitter, door_y + door_circle_offset)
   end
 
   def draw_passengers(passengers)
@@ -331,7 +336,7 @@ class CarInspector < CarVisualizer
   end
 
   def simulate_stop
-    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding = 2, choice_algo)
+    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding = 1, choice_algo)
     @stop_id += 1
 
     @history << @passengers
@@ -339,6 +344,8 @@ class CarInspector < CarVisualizer
 
   def play_sim
   end
+
+  MaxCost = DefaultType.values.sum
 
   def draw_costs(costs)
     origin_x = 40
@@ -355,15 +362,25 @@ class CarInspector < CarVisualizer
       x_offset += x_inc
     end
 
+    plot_offset_y = 200
+    #
+    # draw current x cursor
+    stroke(200, 50, 50)
+    cursor_x = origin_x + x_inc * @passengers.size
+    line(cursor_x, origin_y + plot_offset_y, cursor_x, origin_y + plot_offset_y - 150)
+
+    # draw line plot
     x_offset = 0
     noFill();
     stroke(0);
     beginShape();
+    curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*MaxCost)
     costs.each do |cost|
-      curveVertex(origin_x + x_offset, origin_y + 200 - 3*cost)
+      curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*cost)
       x_offset += x_inc
     end
     endShape();
+
   end
 
   def clear_rect(x, y, w, h)
@@ -417,7 +434,7 @@ class CarInspector < CarVisualizer
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
     draw_user_values(DefaultType, @user_space_values) if @user_space_values
-    draw_costs(@costs) if @costs
+    draw_costs(@costs || [])
   end
 
   def key_pressed(event)
@@ -444,6 +461,7 @@ class CarInspector < CarVisualizer
       space = col_row_to_space(col_row)
       @user_space = space
       pass = Passenger.new(0, @stop_id, nil, @user_space.space, nil, nil, nil).tap{ |pa| pa.door = car.nearest_door(pa) }
+      @user_pass = pass
       if !@passengers.map(&:space).include?(space.space)
         @passengers = (passengers + [pass])
         @history << @passengers
@@ -454,19 +472,45 @@ class CarInspector < CarVisualizer
     reset_space_values
   end
 
+  def str_to_space(str, car=@car)
+    c, r = parse_space(str)
+    car.plan[c][r]
+  end
+
   def col_row_to_space(col_row, car=@car)
     car.plan[col_row[0]][col_row[1]]
   end
 
-  def predict_future(value_algo, choice_algo, space, passes, total_borders) 
-    stop_id = @stop_id
-    future_passes = reject_space(passes, space)
-    (0...total_borders).map do |i|
-      _, future_passes = simulate_trip_stop(car, stop_id, future_passes + [space], n_boarding = 1, choice_algo)
-      future_passes = reject_space(future_passes, space)
-      values = Near_seat_alone_values.call(car.plan, future_passes, car.nearest_door(space), space)
+  def triangle_map(a); (1 .. a.size).map{|i| a[0,i] }; end
+
+  def historical_costs(all_passengers, space_str)
+    space =
+      if space_str.is_a?(String)
+        str_to_space(space_str)
+      else
+        space_str
+      end
+
+    triangle_map(all_passengers).map do |pre_passes|
+      passengers = reject_space(pre_passes, space)
+      values = Near_seat_alone_values.call(car.plan, passengers, car.nearest_door(space), space)
       values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum
     end
+  end
+
+  def predict_future(value_algo, choice_algo, user_pass, passes, total_borders) 
+    stop_id = @stop_id
+    space = user_pass.space
+    future_passes = reject_space(passes, space)
+    future_history = (0...(total_borders - @passengers.size)).map do |i|
+      _, future_passes = simulate_trip_stop(car, stop_id, future_passes + [user_pass], n_boarding = 1, choice_algo)
+      future_passes
+    end
+
+    all_passes = (@passengers || []) + future_history.last
+    puts "future_history: #{ future_history.map(&:size).inspect }"
+
+    historical_costs(all_passes, space)
   end
 
   def reject_space(passes, space)
@@ -480,7 +524,7 @@ class CarInspector < CarVisualizer
     passes = reject_space(@passengers, @user_space)
     if @user_space
       @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
-      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_space, passes, 10)
+      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_pass, passes, 10)
       clear
     end
   end
