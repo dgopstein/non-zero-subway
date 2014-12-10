@@ -27,6 +27,7 @@ class CarVisualizer < Processing::App
 
   def seat_size
     case car.name
+    #when 'R68_section' then 42
     when 'R68' then 42
     else 40
     end
@@ -85,6 +86,13 @@ class CarVisualizer < Processing::App
     background 255
   end
 
+  def vtext(text, x, y)
+    pushMatrix();
+    translate(x,y);
+    rotate(-HALF_PI);
+    text(text,0,0);
+    popMatrix();
+  end
 
   def draw_car(car)
     car.plan.each_with_index do |col, col_num|
@@ -105,7 +113,7 @@ class CarVisualizer < Processing::App
             fill 255, 102, 18
             rect(x, y, seat_size, seat_size)
 
-            if record.seat_pole > 0
+            if record.seatpole > 0
               fill 102, 255, 18
               rect(*space_to_xy(col_num, row_num),
                    seat_size/4,
@@ -187,12 +195,38 @@ class CarVisualizer < Processing::App
   end
 
   def space_to_xy_pretty(col, row)
+    centering_offset = (3/8.0)*seat_size # draw the circles in the middle of the seats
+    hs = (1/2.0)*seat_size 
+    margin = seat_size+3
+    transverse_legroom = 25
     x = y = 0
-    if car.name.starts_with?('R68')
-      transverse_legroom = 25
-      margin = seat_size+3
+    if car.name == 'R68_section'
+      xss = seat_size.to_f + 1
+      yss = seat_size.to_f - 1
+      x = -hs +
+        case col
+        when 1 then 2*xss
+        when 2 then 3*xss
+        when 3 then 4*xss
+        when 4 then 5*xss
+        when 5 then 6*xss
+        when 6 then 7*xss
+        when 7 then 8*xss
+        when 8 then 9*xss + transverse_legroom
+        else 1000
+        end
+      y = -hs-2 + margin +
+        case row
+        when 0 then yss
+        when 1 then 2*yss
+        when 2 then 3*yss
+        when 3 then 4*yss
+        when 4 then 5*yss + 1
+        when 5 then 6*yss + 1
+        else 1000
+        end
+    elsif car.name == 'R68'
       y_scale = seat_size - 2
-      centering_offset = (3/8.0)*seat_size # draw the circles in the middle of the seats
       y = row*y_scale + margin + centering_offset
 
       section_seats = 11 # width of a section in seats
@@ -269,16 +303,22 @@ class CarVisualizer < Processing::App
              door_x + door_x_jitter, door_y + door_circle_offset)
   end
 
+  def draw_trails(passengers)
+    passengers.ergo.each do |passenger|
+      col, row = parse_space(passenger.space)
+
+      # draw trail
+      noFill
+      draw_trail_pretty(col, row, passenger.door.space) if passenger.door
+    end
+  end
+
   def draw_passengers(passengers)
     passengers.ergo.each do |passenger|
       col, row = parse_space(passenger.space)
 
       fill(*PassengerColor)
       draw_passenger(passenger.space)
-
-      # draw trail
-      noFill
-      draw_trail_pretty(col, row, passenger.door.space) if passenger.door
     end
   end
 
@@ -350,13 +390,13 @@ class CarInspector < CarVisualizer
   def draw_costs(costs)
     origin_x = 40
     origin_y = 600
-    clear_rect(origin_x - 50 , origin_y - 50, 500, 600)
+    clear_rect(origin_x - 50 , origin_y - 20, 500, 600)
 
     plot_offset_y = 150
     text_offset_y = 170
 
     x_inc = 20
-    x_offset = -20
+    x_offset = -15
     costs.each do |cost|
       fill(0)
       textSize(11)
@@ -397,7 +437,7 @@ class CarInspector < CarVisualizer
 
   def draw_user_values(weights, vals)
     origin_x = 40
-    origin_y = 500
+    origin_y = 490
 
     bar_width = 35
     bar_height = -150
@@ -409,8 +449,8 @@ class CarInspector < CarVisualizer
     x_offset = 0
 
     # blank words
-    clear_rect(origin_x - 2*pad, origin_y + 40, 600, -30)
-    textAlign(CENTER)
+    clear_rect(origin_x - 2*pad, origin_y + 1, 600, 70)
+    textAlign(RIGHT)
 
     weights.deep_zip(vals).map do |key, (weight, val)|
       weight_fract = weight / max_weight
@@ -426,8 +466,8 @@ class CarInspector < CarVisualizer
 
       # name
       fill(0)
-      textSize(11)
-      text(key.to_s, origin_x + x_offset + 17, origin_y + 30)
+      textSize(16)
+      vtext(key.to_s, origin_x + x_offset + 20, origin_y + 10)
 
       x_offset += 1.5 * bar_width
     end
@@ -436,6 +476,7 @@ class CarInspector < CarVisualizer
 
   def draw
     draw_pretty_car(car)
+    draw_trails(@passengers)
     draw_passengers(@passengers)
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
@@ -449,6 +490,7 @@ class CarInspector < CarVisualizer
         @history.pop
         @passengers = @history.last || []
         @user_space = nil if @user_space && !@passengers.map(&:space).include?(@user_space.space)
+        p @user_space
         reset_space_values
 
       when 39 # >

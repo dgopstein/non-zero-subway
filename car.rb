@@ -81,7 +81,7 @@ class Car
   end
 end
 
-Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seat_pole, :vestibule) do
+Space = Struct.new(:car_class, :space, :position, :pole, :wall, :door, :map, :legroom, :perpendicular, :seatpole, :vestibule) do
   def col_row
     parse_space(space)
   end
@@ -110,13 +110,13 @@ def space_type(space_name, car)
   if space.position > 0
     if space.door > 0 then :seat_door
     elsif space.nook? then :seat_nook
-    elsif space.seat_pole > 0 then :seat_pole
+    elsif space.seatpole > 0 then :seatpole
     elsif space.wall > 0 then :seat_wall
     else :seat_middle
     end
   else
     if space.door > 0 then :floor_door
-    elsif space.pole > 0 then :floor_pole # pole NOT seat_pole
+    elsif space.pole > 0 then :floor_pole # pole NOT seatpole
     elsif space.wall > 0 then :floor_wall
     else :floor
     end

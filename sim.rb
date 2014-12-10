@@ -180,9 +180,9 @@ DefaultType = {
   dist: 14,
   seat: 8, 
   door: 5,
-  seat_pole: 4,
+  seatpole: 4,
   nook: 2,
-  anchored: 1
+  anchor: 1
 }
 
 def space_cost(space_values_algo, type, plan, occupied, door, space)
@@ -207,9 +207,9 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
 
   is_space_type = lambda{|type| space_type(space, class_to_car(space.car_class)) == type ? 1 : 0}
 
-  anchored = 1 - is_space_type.call(:floor)
+  anchor = 1 - is_space_type.call(:floor)
   stand_door = is_space_type.call(:floor_door)
-  seat_pole = is_space_type.call(:seat_pole)
+  seatpole = is_space_type.call(:seatpole)
   nook = is_space_type.call(:seat_nook)
 
   {
@@ -217,9 +217,9 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
     dist: walk_distance,
     seat: sit_preference,
     door: stand_door,
-    seat_pole: seat_pole,
+    seatpole: seatpole,
     nook: nook,
-    anchored: anchored
+    anchor: anchor
   }
 end
 
