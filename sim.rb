@@ -458,6 +458,6 @@ def display_heatmap(hash)
 end
 
 def run_inspector
-  $cv ||= CarInspector.new(method(:choose_near_seat_alone), DefaultType)
+  $cv ||= CarInspector.new(method(:choose_near_seat_alone), Near_seat_alone_values, DefaultType)
   $cv.play_sim()
 end

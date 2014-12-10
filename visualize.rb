@@ -14,8 +14,6 @@ UserColor = [174,226,57]
 
 $Arial12 = nil
 
-#TODO try something maroon maybe?
-
 class CarVisualizer < Processing::App
   include Heatmaps
 
@@ -353,10 +351,11 @@ ValuesHeight = 250
 CostHeight = 250
 
 class CarInspector < CarVisualizer
-  attr_accessor :choice_algo, :type, :history, :passengers, :user_space
-  def initialize(choice_algo, type)
+  attr_accessor :choice_algo, :value_algo, :type, :history, :passengers, :user_space
+  def initialize(choice_algo, value_algo, type)
     super({}, car_name = 'R68_section')
     @choice_algo = choice_algo
+    @value_algo = value_algo
     @type = type
     @history = []
     @passengers = []
@@ -385,7 +384,9 @@ class CarInspector < CarVisualizer
   def play_sim
   end
 
-  MaxCost = DefaultType.values.sum
+  def max_cost
+    @max_cost ||= type.values.sum
+  end
 
   def draw_costs(costs)
     origin_x = 40
@@ -417,13 +418,13 @@ class CarInspector < CarVisualizer
     noFill();
     stroke(0);
     beginShape();
-    curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*MaxCost)
+    curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*max_cost)
     costs.each do |cost|
-      curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*cost)
       x_offset += x_inc
+      curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*cost)
     end
-    curveVertex(origin_x + x_offset+1, origin_y + plot_offset_y - 3*(costs.last||MaxCost))
-    curveVertex(origin_x + x_offset+2, origin_y + plot_offset_y - 3*(costs.last||MaxCost))
+    curveVertex(origin_x + x_offset+1, origin_y + plot_offset_y - 3*(costs.last||max_cost))
+    curveVertex(origin_x + x_offset+2, origin_y + plot_offset_y - 3*(costs.last||max_cost))
     endShape();
     strokeWeight(1)
 
@@ -480,7 +481,7 @@ class CarInspector < CarVisualizer
     draw_passengers(@passengers)
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
-    draw_user_values(DefaultType, @user_space_values) if @user_space_values
+    draw_user_values(type, @user_space_values) if @user_space_values
     draw_costs(@costs || [])
   end
 
@@ -542,8 +543,16 @@ class CarInspector < CarVisualizer
     all_passengers = reject_space(pre_all_passengers, space)
 
     triangle_map(all_passengers).map do |passengers|
-      values = Near_seat_alone_values.call(car.plan, passengers, car.nearest_door(space), space)
-      values.deep_zip(DefaultType).values.map{|v, w| v * w}.sum
+      values = value_algo.call(car.plan, passengers, car.nearest_door(space), space)
+      values.deep_zip(type).values.map{|v, w| v * w}.sum
+    end
+  end
+
+  def best_future(value_algo, choice_algo, passengers, total_borders)
+    occupied, unoccupied = occupied_and_not(car.plan, passengers)
+
+    unoccupied.map do |space|
+      p space
     end
   end
 
@@ -569,8 +578,8 @@ class CarInspector < CarVisualizer
   def reset_space_values
     passes = reject_space(@passengers, @user_space)
     if @user_space
-      @user_space_values = Near_seat_alone_values.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
-      @costs = predict_future(Near_seat_alone_values, choice_algo, @user_pass, passes, 18)
+      @user_space_values = value_algo.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
+      @costs = predict_future(value_algo, choice_algo, @user_pass, passes, 18)
       clear
     end
   end
