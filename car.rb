@@ -72,7 +72,7 @@ class Car
   end
 
   def nearest_door(s)
-    ds = top?(s.space) ? top_doors : bottom_doors
+    ds = top?(s.space) ? bottom_doors : top_doors
     ds.min_by{|d| manhattan_distance(s.space, d.space)}
   end
 
