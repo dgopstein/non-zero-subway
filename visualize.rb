@@ -12,8 +12,6 @@ Processing::App::SKETCH_PATH = __FILE__
 PassengerColor = [0,168,198]
 UserColor = [174,226,57]
 
-$Arial12 = nil
-
 class CarVisualizer < Processing::App
   include Heatmaps
 
@@ -363,7 +361,6 @@ class CarInspector < CarVisualizer
   end
 
   def setup
-    $Arial12 = createFont("Arial", 12, true )
     clear
     size (@car.width+2)*seat_size,
          (@car.height+2)*seat_size + ValuesHeight + CostHeight
@@ -396,6 +393,7 @@ class CarInspector < CarVisualizer
     plot_offset_y = 150
     text_offset_y = 170
 
+    # draw x-axis labels, cost numbers
     x_inc = 20
     x_offset = -15
     costs.each do |cost|
@@ -405,6 +403,10 @@ class CarInspector < CarVisualizer
 
       x_offset += x_inc
     end
+
+    # draw sum cost
+    textSize(20)
+    text('%2.0f' % costs.sum, origin_x + 185, origin_y + text_offset_y - 40)
 
     x_offset = -15
 
@@ -499,7 +501,9 @@ class CarInspector < CarVisualizer
         reset_space_values
         #puts "done simulating"
 
-      #when 38 # ^
+      when 38 # ^
+        @user_space = best_future(value_algo, choice_algo, @passengers, 18)
+
       #when 40 # v
     end
   end
@@ -551,8 +555,11 @@ class CarInspector < CarVisualizer
   def best_future(value_algo, choice_algo, passengers, total_borders)
     occupied, unoccupied = occupied_and_not(car.plan, passengers)
 
-    unoccupied.map do |space|
-      p space
+    unoccupied.max_by do |space|
+      future_values = predict_future(value_algo, choice_algo, space, passengers, 18)
+      sum = future_values.drop(@passengers.length).sum
+      puts "#{space.space} = #{sum}"
+      sum
     end
   end
 
@@ -561,9 +568,6 @@ class CarInspector < CarVisualizer
     space = user_pass.space
     future_passes =
         simulate_trip_stop(car, stop_id, @passengers||[], (total_borders - @passengers.size), choice_algo)[1]
-
-    
-    puts "future_passes: #{ future_passes.map(&:space).inspect }"
 
     historical_costs(future_passes, space)
   end
