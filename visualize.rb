@@ -400,8 +400,9 @@ class CarInspector < CarVisualizer
 
   def setup
     clear
-    size (@car.width+2)*seat_size,
-         (@car.height+2)*seat_size + ValuesHeight + CostHeight
+    @size_x = (@car.width+2)*seat_size
+    @size_y = (@car.height+2)*seat_size + ValuesHeight + CostHeight
+    size @size_x, @size_y
     smooth
   end
 
@@ -476,30 +477,39 @@ class CarInspector < CarVisualizer
     rect(x, y, w, h)
   end
 
-  def draw_user_values(weights, vals)
+  ValuesBottom = 490
+  ValuesTop = 340
+  WeightPad = 4
+  BarHeight = ValuesBottom - ValuesTop
+  def max_weight
+    type.values.max.to_f
+  end
+
+  def draw_user_values(vals)
     origin_x = 40
-    origin_y = 490
+    origin_y = ValuesBottom
 
     bar_width = 35
-    bar_height = -150
+    bar_height = -BarHeight
 
-    pad = 4
-
-    max_weight = weights.values.max.to_f
+    pad = WeightPad
 
     x_offset = 0
+    x_inc = 1.5 * bar_width
 
     # blank words
     clear_rect(origin_x - 2*pad, origin_y + 1, 600, 70)
     textAlign(RIGHT)
 
-    weights.deep_zip(vals).map do |key, (weight, val)|
+    type.deep_zip(vals).map do |key, (weight, val)|
       weight_fract = weight / max_weight
+
+      box_height = bar_height * weight_fract - pad
 
       # weight
       noFill
       stroke(0)
-      rect(origin_x + x_offset, origin_y, bar_width, bar_height * weight_fract - pad)
+      rect(origin_x + x_offset, origin_y, bar_width, box_height)
 
       # value
       fill(*UserColor)
@@ -510,19 +520,20 @@ class CarInspector < CarVisualizer
       textSize(16)
       vtext(key.to_s, origin_x + x_offset + 20, origin_y + 10)
 
-      x_offset += 1.5 * bar_width
+      x_offset += x_inc
     end
 
   end
 
   def draw
+    #clear_rect(0, 0, @size_x, @size_y)
     draw_pretty_car(car)
     draw_trails(@passengers)
     draw_future_costs(@all_future_costs) if @all_future_costs && !@all_future_costs.empty?
     draw_passengers(@passengers)
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
-    draw_user_values(type, @user_space_values) if @user_space_values
+    draw_user_values(@user_space_values) if @user_space_values
     draw_costs(@costs || [])
   end
 
@@ -544,25 +555,52 @@ class CarInspector < CarVisualizer
         @all_future_costs = all_future_costs(value_algo, choice_algo, @passengers, 18)
 
       when 40 # v
-        @all_future_costs = nil
+        @all_future_costs = []
     end
   end
 
   def mousePressed
-    col_row = xy_to_space_pretty(mouseX, mouseY)
-    if col_row.all?
-      space = col_row_to_space(col_row)
-      @user_space = space
-      pass = Passenger.new(0, @stop_id, nil, @user_space.space, nil, nil, nil).tap{ |pa| pa.door = car.nearest_door(pa) }
-      @user_pass = pass
-      if !@passengers.map(&:space).include?(space.space)
-        @passengers = (passengers + [pass])
-        @history << @passengers
+    if mouseY < ValuesTop
+      col_row = xy_to_space_pretty(mouseX, mouseY)
+      if col_row.all?
+        space = col_row_to_space(col_row)
+        @user_space = space
+        pass = Passenger.new(0, @stop_id, nil, @user_space.space, nil, nil, nil).tap{ |pa| pa.door = car.nearest_door(pa) }
+        @user_pass = pass
+        if !@passengers.map(&:space).include?(space.space)
+          @passengers = (passengers + [pass])
+          @history << @passengers
+        end
+      else
+        @user_space = nil
       end
-    else
-      @user_space = nil
+      reset_space_values
+    elsif mouseY < ValuesBottom # User tries to grab type
+      body_width = @size_x - 2*seat_size
+      slider_width = body_width / type.size.to_f
+      body_x = mouseX - seat_size
+      type_index = body_x / slider_width.floor
+
+      update_type(type_index, mouseY)
     end
-    reset_space_values
+  end
+
+      #weight_fract = weight / max_weight
+      #box_height = bar_height * weight_fract - pad
+
+      #weight_fract = (box_height + pad) / bar_height
+      #weight = max_weight / weight_fract
+  def update_type(type_index, mouseY)
+    h_key = type.keys[type_index]
+    new_height = ValuesBottom - mouseY 
+
+    weight_fract = (new_height + WeightPad) / BarHeight.to_f
+    weight = max_weight * weight_fract
+    new_weight = [weight, max_weight].min # don't nerf the other weights
+
+    clear_rect(0, ValuesTop, @size_x, BarHeight)
+
+    type.merge!(h_key => new_weight).tap{|t| puts "type: #{t.map_values{|x| x.round(1)}.inspect}"}
   end
 
   def str_to_space(str, car=@car)
