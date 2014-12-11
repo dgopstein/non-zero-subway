@@ -326,37 +326,8 @@ class CarVisualizer < Processing::App
     end
   end
 
-Gradient = [
-#[0, 255, 0],
-#[0, 223, 0],
-#[0, 191, 0],
-#[0, 159, 0],
-#[0, 127, 0],
-#[63, 0, 91],
-#[127, 0, 63],
-#[191, 0, 31],
-#[255, 0, 0]
-
-[  0, 255, 000],
-[  0, 255, 000],
-[127, 255, 000],
-[255, 255, 000],
-[255, 127, 000],
-[255, 0, 000]
-
-
-]
-
-
-def heatmap_color_for value # [0,1]
-  h = (1 - value) * 120
-  s = 100
-  l = 100
-  [h, s, l]
-end
-
   def draw_future_costs(future_costs)
-    #useHSB do
+    useHSB do
       min_cost = future_costs.values.min
       max_cost = future_costs.values.max
       cost_range = max_cost - min_cost
@@ -365,15 +336,24 @@ end
         cost_scaled = scale_cost[cost]
         x, y = space_to_xy(*space.col_row).map{|n| n - seat_size/2.0}
         
-        #fill(33 + -33*cost_scaled, 100,50, cost_scaled*50)
-        fill(*Gradient[(cost_scaled * (Gradient.size-1)).ceil], 80)
-        #fill(*heatmap_color_for(cost_scaled))
-        rect(x, y, seat_size - 5, seat_size - 5, 5)
+        # squares
+        purp = [254.0 / 3.6, 17* (5**cost_scaled - 1)]
+        #yellow = [59.0 / 3.6, 50* (4**cost_scaled - 1)]
+        #orange = [46 / 3.6, 80* (4**cost_scaled - 1)]
+        fill(*purp, 100)
+
+        rsize = seat_size * 0.7
+        roff = (seat_size - rsize) / 2.0
+        rect(x + roff, y + roff, rsize, rsize, 8)
+
+        # numbers
         fill(0)
+        textAlign(RIGHT)
         textSize(12)
-        text('%2.0f'%cost, x + 5, y + seat_size / 2.0 + 5)
+        #p [x, y, seat_size] if space.space == '01a'
+        text('%2.0f'%cost, x + 30, y + seat_size / 2.0 + 5)
       end
-    #end
+    end
   end
 
   def draw_heatmap(passengers_by_stop, filename=nil)
@@ -538,8 +518,8 @@ class CarInspector < CarVisualizer
   def draw
     draw_pretty_car(car)
     draw_trails(@passengers)
-    draw_passengers(@passengers)
     draw_future_costs(@all_future_costs) if @all_future_costs && !@all_future_costs.empty?
+    draw_passengers(@passengers)
     fill(*UserColor)
     draw_passenger(@user_space) if @user_space
     draw_user_values(type, @user_space_values) if @user_space_values
@@ -552,11 +532,11 @@ class CarInspector < CarVisualizer
         @history.pop
         @passengers = @history.last || []
         @user_space = nil if @user_space && !@passengers.map(&:space).include?(@user_space.space)
-        p @user_space
+        #p @user_space
         reset_space_values
 
       when 39 # >
-        simulate_stop
+        simulate_stop if @passengers.size < car.spaces.compact.size
         reset_space_values
         #puts "done simulating"
 
@@ -615,12 +595,13 @@ class CarInspector < CarVisualizer
   def all_future_costs(value_algo, choice_algo, passengers, total_borders)
     occupied, unoccupied = occupied_and_not(car.plan, passengers)
 
-    unoccupied.mash do |space|
+    puts
+    unoccupied.each_with_index.mash do |space, i|
       future_values = predict_future(value_algo, choice_algo, space, passengers, 18)
       sum = future_values.drop(@passengers.length).sum
-      puts "#{space.space} = #{sum}"
+      Kernel.print ["\r[", *i.times.map{'.'}, ']'].join
       [space, sum]
-    end
+    end.tap{ puts }
   end
 
   def predict_future(value_algo, choice_algo, user_pass, passes, total_borders) 
