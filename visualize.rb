@@ -412,7 +412,8 @@ class CarInspector < CarVisualizer
   end
 
   def simulate_stop
-    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding = 1, choice_algo)
+    typed_algo = lambda{|door, plan, pass| choice_algo.call(door, plan, pass, type)}
+    _, @passengers = simulate_trip_stop(car, @stop_id, @passengers, n_boarding = 1, typed_algo)
     @stop_id += 1
 
     @history << @passengers
