@@ -396,7 +396,7 @@ class CarInspector < CarVisualizer
     @history = []
     @passengers = []
     @stop_id = 0
-    @n_predicted_passengers = 25
+    @n_predicted_passengers = 18
   end
 
   def setup
