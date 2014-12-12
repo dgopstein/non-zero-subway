@@ -185,6 +185,47 @@ DefaultType = {
   anchor: 1
 }
 
+def dist_cost(dist)
+  if dist > 5 || dist == 0
+    0
+  else
+    4**(1-dist)
+  end
+end
+
+def max_dist_cost
+  @max_dist_cost ||=
+    lambda do
+      size = 49
+      x = y = (size / 2.0).ceil
+      size.times.flat_map do |i|
+        size.times.map do |j|
+          manhattan_distance = (i - x).abs + (j - y).abs
+          dist_cost(manhattan_distance)
+        end
+      end.sum
+    end.call
+end
+
+def person_dist_cost_cum_exp(occupied, space)
+  if occupied.empty? then 1.0
+  else
+    1 - (occupied.map{|occ| dist_cost(manhattan_distance(space, occ)) }.sum / max_dist_cost)
+  end
+end
+
+def person_dist_cost_min(occupied, space)
+  car_dist = manhattan_distance('01a', plan.last.last)
+  if occupied.empty? then 1.0
+  else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
+  end
+end
+
+def person_dist(occupied, space)
+  #person_dist_cost_min(occupied, space)
+  person_dist_cost_cum_exp(occupied, space)
+end
+
 def space_cost(space_values_algo, type, plan, occupied, door, space)
   values = space_values_algo.call(plan, occupied, door, space)
   vals_weights = values.deep_zip(type)
@@ -194,14 +235,12 @@ end
 
 Near_seat_alone_values = lambda do |plan, occupied, door, space|
   max_dist = 14.0
-  car_dist = manhattan_distance('01a', plan.last.last)
   exp_dist = lambda do |a, b|
     [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
 
-  person_dist = if occupied.empty? then 1.0
-                else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
-                end
+  person_dist = person_dist_cost(occupied, space)
+
   sit_preference = space.seat? ? 1 : 0
   walk_distance = exp_dist.call(space, door)
 

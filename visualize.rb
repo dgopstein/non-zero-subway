@@ -163,7 +163,6 @@ class CarVisualizer < Processing::App
   end
 
   def key_pressed
-    #puts "key_pressed: "+[key, keyCode].inspect
     if key == CODED
       case keyCode
 
@@ -392,7 +391,8 @@ class CarInspector < CarVisualizer
     super({}, car_name = 'R68_section')
     @choice_algo = choice_algo
     @value_algo = value_algo
-    @type = type
+    @original_type = type.dup
+    @type = type.dup
     @history = []
     @passengers = []
     @stop_id = 0
@@ -538,6 +538,10 @@ class CarInspector < CarVisualizer
   end
 
   def key_pressed(event)
+    case event.keyChar
+    when 32
+      @type = @original_type.dup
+    end
     case event.keyCode
       when 37 # <
         @history.pop
