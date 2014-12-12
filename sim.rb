@@ -168,13 +168,9 @@ def class_to_car(car_class)
 end
 
 # A fully comprehensive pure strategy
-# 22,8,14,1,5,4,1: [0.0790]
-# 22,8,14,1,5,4,20: [0.0580]
-# 22,8,14,1,5,4,10: [0.0579]
-# 22,8,14,1,5,4,6: [0.0574]
-# 22,8,14,1,5,4,3: [0.0355]
-# 22,8,14,1,5,4,2: [0.0190] *
-# 22,8,14,1,5,4,1: [0.0673]
+# 22,14,8,5,4,2,1: [0.0265] *
+# 23,14,8,5,4,2,1: [0.0279]
+# 21,14,8,5,4,2,1: [0.0286]
 DefaultType = {
   person: 22,
   dist: 14,
@@ -186,7 +182,7 @@ DefaultType = {
 }
 
 def dist_cost(dist)
-  if dist > 5 || dist == 0
+  if dist > 10 || dist == 0
     0
   else
     4**(1-dist)
@@ -207,23 +203,23 @@ def max_dist_cost
     end.call
 end
 
-def person_dist_cost_cum_exp(occupied, space)
+def person_dist_cost_cum_exp(plan, occupied, space)
   if occupied.empty? then 1.0
   else
     1 - (occupied.map{|occ| dist_cost(manhattan_distance(space, occ)) }.sum / max_dist_cost)
   end
 end
 
-def person_dist_cost_min(occupied, space)
+def person_dist_cost_min(plan, occupied, space)
   car_dist = manhattan_distance('01a', plan.last.last)
   if occupied.empty? then 1.0
   else Math.log(occupied.map{|occ| manhattan_distance(space, occ)}.min) / Math.log(car_dist)
   end
 end
 
-def person_dist(occupied, space)
-  #person_dist_cost_min(occupied, space)
-  person_dist_cost_cum_exp(occupied, space)
+def person_dist_cost(plan, occupied, space)
+  #person_dist_cost_min(plan, occupied, space)
+  person_dist_cost_cum_exp(plan, occupied, space)
 end
 
 def space_cost(space_values_algo, type, plan, occupied, door, space)
@@ -239,7 +235,7 @@ Near_seat_alone_values = lambda do |plan, occupied, door, space|
     [max_dist - longitudinal_distance(a, b), 0].max / max_dist
   end
 
-  person_dist = person_dist_cost(occupied, space)
+  person_dist = person_dist_cost(plan, occupied, space)
 
   sit_preference = space.seat? ? 1 : 0
   walk_distance = exp_dist.call(space, door)
@@ -423,7 +419,6 @@ def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   [stop, new_passengers]
 end
 
-#TODO visualize decision weights per passenger
 #TODO every stop, present real seating scenerio along trips
 #TODO more accurate doors, longitudenally & laterally
 
@@ -445,11 +440,11 @@ def compare_algos
   }
 
   res = stop_passes_list.mash do |name, algo|
-    stop_passes = time(name, &algo)
+    stop_passes, time = with_time{algo[]}
     stats = stats_by_type(stop_passes)
     dist = hash_distance(control_stats, stats)
     display_stats = stats.map_values{|v| '%.03f' % v}.sort_by{|k,v|k}
-    puts '[%.04f] %10s - %s' % [dist, name, display_stats]
+    puts '[%.04f] %10s (%00.2fs) - %s' % [dist, name, time, display_stats]
     [name, stop_passes]
   end
 
@@ -493,7 +488,7 @@ def display_heatmap(hash)
   $cv ||= CarVisualizer.new()
   car_name = 'R68'
   single_car = hash.select{|k,v| k.car_class == car_name}
-  $cv.draw_heatmap(single_car, "heatmap_#{car_name}_#{$algo}.png")
+  $cv.draw_heatmap(single_car)#, "heatmap_#{car_name}_#{$algo}.png")
 end
 
 def run_inspector
