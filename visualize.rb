@@ -396,6 +396,7 @@ class CarInspector < CarVisualizer
     @history = []
     @passengers = []
     @stop_id = 0
+    @n_predicted_passengers = 25
   end
 
   def setup
@@ -567,7 +568,7 @@ class CarInspector < CarVisualizer
         #puts "done simulating"
 
       when 38 # ^
-        @all_future_costs = all_future_costs(value_algo, choice_algo, @passengers, 18)
+        @all_future_costs = all_future_costs(value_algo, choice_algo, @passengers, @n_predicted_passengers)
 
       when 40 # v
         @all_future_costs = []
@@ -613,7 +614,7 @@ class CarInspector < CarVisualizer
     weight = max_weight * weight_fract
     new_weight = [weight, max_weight].min # don't nerf the other weights
 
-    clear_rect(0, ValuesTop, @size_x, BarHeight)
+    clear_rect(0, ValuesTop - 5, @size_x, BarHeight + 5)
 
     type.merge!(h_key => new_weight).tap{|t| puts "type: #{t.map_values{|x| x.round(1)}.inspect}"}
   end
@@ -650,7 +651,7 @@ class CarInspector < CarVisualizer
 
     puts
     unoccupied.each_with_index.mash do |space, i|
-      future_values = predict_future(value_algo, choice_algo, space, passengers, 18)
+      future_values = predict_future(value_algo, choice_algo, space, passengers, @n_predicted_passengers)
       sum = future_values.drop(@passengers.length).sum
       Kernel.print ["\r[", *i.times.map{'.'}, ']'].join
       [space, sum]
@@ -661,7 +662,8 @@ class CarInspector < CarVisualizer
     stop_id = @stop_id
     space = user_pass.space
     future_passes =
-        simulate_trip_stop(car, stop_id, @passengers||[], (total_borders - @passengers.size), choice_algo)[1]
+        simulate_trip_stop(car, stop_id, @passengers||[], (total_borders - (@passengers||[]).size), choice_algo)[1]
+    #puts "future_passes: #{ future_passes.map(&:space).inspect }"
 
     historical_costs(future_passes, space)
   end
@@ -677,7 +679,8 @@ class CarInspector < CarVisualizer
     passes = reject_space(@passengers, @user_space)
     if @user_space
       @user_space_values = value_algo.call(car.plan, passes, car.nearest_door(@user_space), @user_space)
-      @costs = predict_future(value_algo, choice_algo, @user_pass, passes, 18)
+      @costs = predict_future(value_algo, choice_algo, @user_pass, passes, @n_predicted_passengers)
+      @costs = [@costs[0]] + @costs #TODO this fixes premature dipping, but this just fixes the symptom, not the cause
       clear
     end
   end

@@ -410,7 +410,7 @@ def simulate_trip_stop(car, stop, passengers, n_boarding, choice_algo)
   doors = car.doors.select{|d| d.space[-1] == door_row} # only doors facing one direction
 
   (0...n_boarding).each do |i|
-    door = doors[i % doors.length]
+    door = doors[(passengers.size + i) % doors.length]
     space = choice_algo.call(door, car.plan, new_passengers)
     space_name = space_to_str(space)
     new_passengers << Passenger.new(i, stop_id, nil, space_name, nil, nil, nil).tap{|p| p.door = door}
