@@ -444,8 +444,14 @@ class CarInspector < CarVisualizer
     end
 
     # draw sum cost
+    sum_cost =
+      if @passengers.size < costs.size
+        costs.drop(@passengers.size).sum
+      else
+        costs.sum
+      end
     textSize(20)
-    text('%2.0f' % costs.sum, origin_x + 185, origin_y + text_offset_y - 40)
+    text('%2.0f' % sum_cost, origin_x + 185, origin_y + text_offset_y - 40)
 
     x_offset = -15
 
@@ -455,17 +461,22 @@ class CarInspector < CarVisualizer
     cursor_x = origin_x + x_offset + x_inc * @passengers.size
     line(cursor_x, origin_y + plot_offset_y, cursor_x, origin_y + plot_offset_y - 150) if @costs
 
+    #max_cost = (costs.max || 45)
+    min_cost = 20 # completely arbitrary
+    scale_display = 200
+    cost_range = max_cost - min_cost
+    scale_cost = lambda{|cost| (cost - min_cost) / cost_range.to_f}
     # draw line plot
     noFill();
     stroke(0);
     beginShape();
-    curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*max_cost)
+    curveVertex(origin_x + x_offset, origin_y + plot_offset_y - scale_display*scale_cost.call(costs.first || max_cost))
     costs.each do |cost|
       x_offset += x_inc
-      curveVertex(origin_x + x_offset, origin_y + plot_offset_y - 3*cost)
+      curveVertex(origin_x + x_offset, origin_y + plot_offset_y - scale_display*scale_cost.call(cost))
     end
-    curveVertex(origin_x + x_offset+1, origin_y + plot_offset_y - 3*(costs.last||max_cost))
-    curveVertex(origin_x + x_offset+2, origin_y + plot_offset_y - 3*(costs.last||max_cost))
+    curveVertex(origin_x + x_offset+1, origin_y + plot_offset_y - scale_display*scale_cost.call(costs.last||max_cost))
+    curveVertex(origin_x + x_offset+2, origin_y + plot_offset_y - scale_display*scale_cost.call(costs.last||max_cost))
     endShape();
     strokeWeight(1)
 
