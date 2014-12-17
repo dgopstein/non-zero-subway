@@ -1,7 +1,10 @@
 \documentclass{acm_proc_article-sp}
 
 \usepackage{graphicx}
-\graphicspath{ {images/} }
+\graphicspath{ {images/}, {} }
+
+\usepackage{listings}
+\usepackage{color}
 
 \begin{document}
 
@@ -18,6 +21,26 @@
 
 \date{December 2014}
 
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=none,
+  language=Ruby,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=false,
+  breakatwhitespace=true,
+  tabsize=2
+}
 
 \maketitle
 \begin{abstract}
@@ -70,11 +93,31 @@ In the larger simulation, once every on-boarding interval a passenger is called 
 \end{description}
 
 \subsection{Validating the model}
-  Finite differences gradient decent\cite{flaxman2005online} was used to identify the optimal feature weights for the model described above. The optimal weights are shown below:
-  
+  Finite differences gradient descent\cite{flaxman2005online} was used to identify the optimal feature weights for the model described above. The optimal weights are shown below:
+  \begin{lstlisting}
+Coefficients = {
+  person_dist: 22,
+  door_dist: 14,
+  seat: 8,
+  door_adjacent: 5,
+  seatpole_ajacent: 4,
+  nook: 2,
+  not_freestanding: 1
+}
+\end{lstlisting}
 
-\section{Results and Discussions}
-Through user studies, surveys and predictive modeling we developed an object that mimics the behavior of passengers on the R68 subway car.
+To validate the optimality of this model we devised a distance metric to compare arbitrary subway spot selection configurations. To compare the similarity of two sets of passengers' spot selections we simply aggregate the number of passengers sitting in each type of seat. The distance is then the euclidean distance between the vectors of the two seating counts by type. To asses the accuracy of our model we tried to predict real-world results using our model, then measured the distance between our simulation and the actual observed data. In addition to testing our final model we also compared its output against a related, but simpler model that prioritized only sitting and closeness to the door, and a purely random choice function. In addition to being remarkably closer numerically, we can see visually that the linear combination of the 7 components listed above feel more representative of reality than the other algorithms.
+
+\begin{table*}[t]
+  \caption{Predictive algorithm output and distances} \label{tab:compare_algosi}
+  \begin{tabular}
+      {lll} \hline Algorithm & Distance & Passenger Distribution \\ \hline \\
+      \textbf{Random} & \textbf{0.286} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_random}} \\
+      \textbf{Nearest Seat} & \textbf{0.110} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_nearest_seat}} \\
+      \textbf{Avoid People} & \textbf{0.018} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_seat_alone}} \\
+      \textbf{Control} & \textbf{0.000} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_control}} \\
+ \end{tabular}
+\end{table*}
 
 \bibliographystyle{abbrv}
 \bibliography{subway}
