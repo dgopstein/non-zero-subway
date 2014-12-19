@@ -54,15 +54,15 @@ There is a rich history of studying location games as an analogy to economically
 \item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$
 \item After each stage, each player with $i \leq t$ receives payoff $u_i(a_i)$
 \item Let $u_i(a_i)=min(|a_i - a_j|)$ for all $j <  t$ and $j \neq i$
-\item Let $u_1(a_1)=1.0$
+\item Let $u_1(a_1)=1$
 \end{itemize}
 
 \subsection{Example Play}
-The first player in the Subway Game is presented with a blank unit line. Since no other players have chosen any points, $P_i$ is free to play where ever they would like and still receive payoff of $1.0$. Let's imagine $P_i$ chooses $a_1=3/4$
+The first player in the Subway Game is presented with a blank unit line. Since no other players have chosen any points, $P_i$ is free to play where ever they would like and still receive payoff of $1$. Let's imagine $P_i$ chooses $a_1=3/4$
 
 \startline \drawpoint[blue]{3/4} \stopline
 
-$P_1$ receives payoff 1.0 because $u_1(1/3)=u_1(a_1)=1.0$. After the first stage is over, $t = 2$ and player $P_2$ is free to choose any point in S. Let's say $P_2$ chooses to play $1/3$.
+$P_1$ receives payoff 1 because $u_1(1/3)=u_1(a_1)=1$. After the first stage is over, $t = 2$ and player $P_2$ is free to choose any point in S. Let's say $P_2$ chooses to play $1/3$.
 
 \startline \drawpoint[blue]{1/3} \drawpoint{3/4} \stopline
 
@@ -85,7 +85,29 @@ From this example it is clear that the first two players have quite a bit of reg
 
 In the following sections we consider an example more geared towards optimality, and then we will investigate a general optimal strategy under certain assumptions.
 
-\subsection{An optimal example}
+\subsection{An Optimal Example}
+
+Now we will look at a second game, one where each of the players has learned from mistakes in the first game. As we saw at the end of the last section, in order to minimize historical regret $P_i$ should choose $a_i=1$, in fact, for reasons we will show later, this is always an optimal action for the first player.
+
+\startline \drawpoint[blue]{1} \stopline
+
+Next, $P_2$, feeling more compelled to respond well, decides that they can do better than their choice of 1/3 in the first game. $P_2$ recognizes that in terms of the $t = 2$ payoff and choice $a_2 > 1/3$ would decrease $u_2$ and any $a_2 < 1/3$ would increase it. On the other hand, a choice of $a_2 < 1/3$ would decrease the distance (and therefore payoff) for $P_2$ in stage $t = 3$ if $P_3$ were to make the decision to play 0 again. However, $P_2$ intuits that if they were to play $a_2 = 0$ they could get the best of both worlds, they would receive $u_2(0) = 1$ this turn, and while its not obvious where $P_3$ would play, its clear that $P_3$ would have no incentive to play the same point as $P_2$. So $P_2$ plays $a_2 = 0$ and hopes for the best in $t = 3$. It turns out that this too is an optimal play for $P_2$ for a similar reason that $a_1 = 1$ was.
+
+\startline \drawpoint[blue]{0} \drawpoint{1} \stopline
+
+As $P_3$ gets ready to make their move, the realize, as $P_2$ predicted, that their old choice of $a_3 = 0$ is now the least desirable choice possible. Since the last game ended in $t = 3$ and $P_3$ suspects that they might get lucky and this example might just end after 3 stages as well, they decide to not put too much effort into their decision and chose the one-stage distance maximum by moving their knife\cite{dubins1961cut} over all the points in S until they find the maximum at 1/2, which they choose.
+
+\startline \drawpoint{0} \drawpoint[blue]{1/2} \drawpoint{1} \stopline
+
+As it turns out, $P_3$ was right about several things. Firstly, $a_3$, in addition to offering the maximal one-stage payoff at $t = 3$ also serves as the long-term optimal strategy for that stage. $P_3$ was also correct that there will be no more stages in this example, but before we go on to prove the optimality of each of the claims we made above, let's quickly tally up the scores of the above example:
+\begin{description}
+\item[$P_1$:] 1 + 1 + 1/2 = 5/2
+\item[$P_2$:] 1 + 1/2 = 3/2
+\item[$P_3$:] 1/2 = 1/2
+\end{description}
+
+In closing, it is interesting to note that in addition to being an individual benefit to each player over the previous example, it is both a Nash equilibrium and a Pareto optimal configuration.
+
 
 \bibliographystyle{abbrv}
 \bibliography{game}
