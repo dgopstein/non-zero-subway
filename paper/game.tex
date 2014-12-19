@@ -6,8 +6,8 @@
 \definecolor{lightgray}{gray}{0.9}
 
 
-\newcommand{\startline} {
-  \begin{tikzpicture}[scale = 8]
+\newcommand{\startline}[1][1] {
+  \begin{tikzpicture}[scale = #1*8]
   \draw [gray] (0,0) -- (1,0);
 }
 
@@ -51,7 +51,7 @@ There is a rich history of studying location games as an analogy to economically
 \item Let $S$ be a real-valued, closed, bounded set between [0, 1]
 \item Let there be an unknown, unbounded number N of players $P_1$ up to $P_N$
 \item Let there be one stage $t$ for each players $P_i$
-\item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$
+\item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$ and inserts their choice in configuration $C$
 \item After each stage, each player with $i \leq t$ receives payoff $u_i(a_i)$
 \item Let $u_i(a_i) = nearest\_neighbor(a_i, a_{i-1}, a_{i-2}, ...)$
 \item Let $nearest\_neighbor(x, y_1, y_2, ...) = min(\Delta(x, y))$ for all $i$
@@ -120,16 +120,55 @@ Anonymity in the context of isolation games such as the Subway Game describes th
 Uniformity is a property which depends on anonymity. For an anonymous isolation game, it is uniform if the utility functions for all players are equivalent\cite{zhao2008isolation}. This is an assumption we choose to make in the subway game. Each player values a given point equally, $u_i(x) = u_j(x)$ for all $i, j$.
 
 \subsubsection{Symmetry}
-Though the definition of the Subway Game is given in terms of a real-valued line, the symmetric property of the game dictates that the value of any chosen point alone has no inherent meaning. For example, in the absence of pre-existing selections, a player should be equally happy to choose 0 as they would to choose 1, similarly there should be no difference in selecting between 1/4 and 3/4 under no other constraints. These values are on opposite ends of the spectrum, but exhibit the same properties with respect to expected utility.
+Though the definition of the Subway Game is given in terms of a real-valued line, the symmetric property of the game dictates that the value of any chosen point alone has no inherent meaning. For example, in the absence of pre-existing selections, a player should be equally happy to choose 0 as they would to choose 1, similarly there should be no difference in selecting between 1/4 and 3/4 under no other constraints. These values are on opposite ends of the spectrum, but exhibit the same properties with respect to expected utility. In general $nearest\_neighbor(x, 0, 1) = nearest\_neighbor(1 - x, 0, 1)$.
 
 \subsubsection{Sectional Indestinguishability}
 For two delimited sections of equal size, bounded by $[y_1, y_2]$ and $[z_1, z_2]$ such that $\Delta(y_1, y_2) = \Delta(z_1, z_2)$ a player $P_i$ should have no preference between the two. For all $a$ such that $y_1 < a < y_2$ there exists a $b$ such that $nearest\_neighbor(a, y_1, y_2) = nearest\_neighbor(b, z_1, z_2)$
 
-\subsubsection{Proximal Dominance}
-A point $x$ between two other points, $y_1, y_2$ where $y_1 < y_2$ can never be affected by any point below the lower boundary or above the upper. Since the utility function is defined in terms of nearest neighbor which is in turn defined by absolute distance, any point $z$ which $z \leq y_1$ or $z \geq y_2$ implies $\Delta(x, z) \geq \Delta(x, y_1)$ or $\Delta(x, z) \geq \Delta(x, y_2)$ and therefore $nearest\_neighbor(x, y_1, y_2, z) \leq nearest\_neighbor(x, z)$
+\subsubsection{Closure}
+A point $x$ between two other points, $y_1, y_2$ where $y_1 < y_2$ is said to be closed over by those two points. It can never be affected by any point below the lower boundary or above the upper. Since the utility function is defined in terms of nearest neighbor which is in turn defined by absolute distance, any point $z$ which $z \leq y_1$ or $z \geq y_2$ implies $\Delta(x, z) \geq \Delta(x, y_1)$ or $\Delta(x, z) \geq \Delta(x, y_2)$ and therefore $nearest\_neighbor(x, y_1, y_2, z) \leq nearest\_neighbor(x, z)$
 
 \subsubsection{Self-similarity}
 After every non-boundary move, a new delimited line segment is created along $S$. Much like the british coastline\cite{mandelbrot1967long}, each individual segments has the same dynamics as the entire (enclosed) unit line. For any two uninterrupted segments along the line (including the entire unit line itself), $v$ and $w$ there exists a linear mapping between the two.
+
+\section{Properties of the Rational Passenger}
+In the environment of the of the Subway Game we can make general statements about how a rational player should perceive and react to specific phenomena in the game.
+
+\subsection{Proportional Dominance}
+For any two uninterrupted segments of S, the larger is always preferable to a rational player. Imagine we have enclosed the unit line at {0, 1} and partitioned it at 1/3:
+
+\startline \drawpoint{0} \drawpoint{1/3} \drawpoint{1} \stopline
+
+A rational player will never choose to play the same action as an existing player, as it affords them exactly 0 utility over the length of the game, so a rational player confronting a segmented line must choose to play between the existing players. In this example there are two sections between which they must choose, but which is preferable? Consider the two segments separately:
+
+\startline[1/3] \drawpoint{0} \drawpoint{1} \stopline \\\\
+\startline[2/3] \drawpoint{0} \drawpoint{1} \stopline
+
+Given the symmetry and anonymity properties of the game there should be no preference to choose one segment over the other based solely on their locations in $S$. This result is confirmed by the property of indistinguishability of equal length segments. When segments are not the same size, however, there should be a clear preference for any rational player to choose to play in the larger segment. Due to the self-similarity property of segments we can see that many properties of segments still hold. Closure, for instance is still valid, when a player decides to play in one segment, they can not be effected by actions that occur in the other segments. The only property that changes with respect to segment size is the distance metric $\Delta$, which scales linearly with the absolute size of the segment. Consider the following example where a player who only ever plays at 3/4 of the segment they chose to play in. When they try to decide between the two segments above, they consider their two option:
+
+\startline[1/3] \drawpoint{0} \drawpoint[blue]{3/4} \drawpoint{1} \stopline \\\\
+\startline[2/3] \drawpoint{0} \drawpoint[blue]{3/4} \drawpoint{1} \stopline
+
+Even though the segment-relative strategy is the same in both segments, the absolute payoff of both is scaled by the total length of the segments. For this example, the strategy of playing 3/4 of the segment length pays absolutely 1/4 in the smaller segment and 1/2 in the segment. In general this relation holds. For two segments $Y$ and $Z$ mapped linearly by a scale factor $m$ such that $Y=mZ$ a pure strategy $x$ applied to both segments $xY=mxZ$ yields an absolute payoff from both segments linearly proportional to $m$: $xY/xZ=Y/Z=m$. Therefore it is always preferable play in the largest segment available.
+
+\section{An Optimal Pure Strategy}
+Here we will prove the optimality of an individual strategy. Due to the uniformity property of this game, once we show that strategy $\mu(C)$ is no worse than any other strategy, we will have shown that it is also a Nash equilibrium and a Pareto optimum, for no player can change their own strategy without changing everyone else's, and as we will show, no uniform strategy can improve on the optimal $\mu(C)$.
+
+Since the Subway game is played on a infinite and bounded action space a discontinuity arises at the edges of $S$. The points ${0, 1}$ are the only two in the game which don't have infinitely many points both below and above, which means they must be reasoned about differently then the rest of the action space. For now, let's assume that the intuitively correct first two moves are optimal. $P_1$ chooses between ${0, 1}$ and $P_2$ takes the remaining border value.
+
+\startline \drawpoint[blue]{0} \drawpoint[blue]{1} \stopline
+
+After both edges are selected, the rest of the game can be analyzed homogeneously, the strategies that work in the beginning will continue to work throughout. At this point, there is one un-broken section in which $P_3$ can select their action from, specifically any value $(0, 1)$ is a rational choice in that it offers a definite, positive, payoff\cite{perea2012epistemic}. Before we consider which choice is \textit{best} for $P_3$ let's consider the effect of their choice on the next player. Given the notion of rational proportional dominance, know that a rational player will prefer to play in the larger segment. Using the property of symmetry we can force our player to choose an action $x$ such that $x \leq 1/2$ with no loss of generality. When we consider the actions of the following players, however, their indifference over symmetry does not carry over the player of this round, $\Delta(0, x) \neq \Delta(0, 1-x)$, in this scenario we consider only the average case, where all following players choose between $a_i \leq 0$ and $a_i \geq 1/2$ with even probability. Under these constraints we can formulate the infinite horizon utility of a certain action as:
+
+$\mu(x) = x + (1 - x)((1/2)\mu(x) + (1/2)\mu(1-x))$
+
+%Though we can prove this function converges as it recurses, we can also perform symbolic manipulation to simplify its representation:
+
+%$\mu(x) = x + (1 - x)(\mu(x) + \mu(1-x)/2)$
+
+However, we know that $\mu$ is symmetric about $x = 1/2$ therefore $\mu(x) + \mu(1-x)$ where $0 \leq x \leq 1/2$ evaluates to a constant term.
+
+$\mu(x) = x + c(1 - x)$
 
 \bibliographystyle{abbrv}
 \bibliography{game}
