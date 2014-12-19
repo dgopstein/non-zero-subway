@@ -2,6 +2,7 @@
 
 \usepackage[usenames, dvipsnames]{color}
 \usepackage{tikz}
+\usepackage{mathtools}
 
 \definecolor{lightgray}{gray}{0.9}
 
@@ -160,15 +161,54 @@ Since the Subway game is played on a infinite and bounded action space a discont
 
 After both edges are selected, the rest of the game can be analyzed homogeneously, the strategies that work in the beginning will continue to work throughout. At this point, there is one un-broken section in which $P_3$ can select their action from, specifically any value $(0, 1)$ is a rational choice in that it offers a definite, positive, payoff\cite{perea2012epistemic}. Before we consider which choice is \textit{best} for $P_3$ let's consider the effect of their choice on the next player. Given the notion of rational proportional dominance, know that a rational player will prefer to play in the larger segment. Using the property of symmetry we can force our player to choose an action $x$ such that $x \leq 1/2$ with no loss of generality. When we consider the actions of the following players, however, their indifference over symmetry does not carry over the player of this round, $\Delta(0, x) \neq \Delta(0, 1-x)$, in this scenario we consider only the average case, where all following players choose between $a_i \leq 0$ and $a_i \geq 1/2$ with even probability. Under these constraints we can formulate the infinite horizon utility of a certain action as:
 
-$\mu(x) = x + (1 - x)((1/2)\mu(x) + (1/2)\mu(1-x))$
+\begin{equation}
+\mu(x) = x + (x + (1 - x))(1/2)(\mu(x) + \mu(1-x))
+\end{equation}
 
-%Though we can prove this function converges as it recurses, we can also perform symbolic manipulation to simplify its representation:
+Which reads as "your current action plus the action of your opponent multiplied by the probability they play near or far from you, distributed over both of the segments you just created". But before trying to deal with this recursive function directly, we can expand the sum of the recursive elements and explore its behavior:
 
-%$\mu(x) = x + (1 - x)(\mu(x) + \mu(1-x)/2)$
+\begin{equation}
+\mu(x) + \mu(1-x) = \\\\
+ \begin{array}[t]{l}
+      \left( x + (1 - x)(1/2)(\mu(x) + \mu(1-x)) \right)+\\
+      \left( (1 - x) + x(1/2)(\mu(1 - x) + \mu(x)) \right)
+    \end{array}
+\end{equation}
 
-However, we know that $\mu$ is symmetric about $x = 1/2$ therefore $\mu(x) + \mu(1-x)$ where $0 \leq x \leq 1/2$ evaluates to a constant term.
+\begin{equation}
+\mu(x) + \mu(1-x) = 1 + (1/2)(\mu(x) - \mu(1 - x))
+\end{equation}
 
-$\mu(x) = x + c(1 - x)$
+\begin{equation}
+\mu(x) + \mu(1-x) = \sum_{i=0}^{\infty} 2^{-i}
+\end{equation}
+
+And substituting back into (1) we get:
+
+\begin{equation}
+\mu(x) = x + (x + (1 - x))(1/2)\sum_{i=0}^{\infty} 2^{-i}
+\end{equation}
+
+Or, simplifying:
+
+\begin{equation}
+\mu(x) = x + \sum_{i=1}^{\infty} 2^{-i}
+\end{equation}
+
+And since:
+
+\begin{equation}
+\sum_{i=1}^{\infty} 2^{-i} = 1
+\end{equation}
+
+Our equation becomes:
+
+\begin{equation}
+\mu(x) = x + 1
+\end{equation}
+
+Or simply: When deciding where to play, the only payoff you need worry about, is your first.
+
 
 \bibliographystyle{abbrv}
 \bibliography{game}
