@@ -106,7 +106,23 @@ As it turns out, $P_3$ was right about several things. Firstly, $a_3$, in additi
 \item[$P_3$:] 1/2 = 1/2
 \end{description}
 
-In closing, it is interesting to note that in addition to being an individual benefit to each player over the previous example, it is both a Nash equilibrium and a Pareto optimal configuration.
+In closing, it is interesting to note that in addition to having improved the total utility paid to each player when compared with the previous example, this example is currently configured both in a Nash equilibrium and a Pareto optimum.
+
+\subsection{Properties of the Subway Game}
+Before we go on to prove claims about individual strategies, we must first establish some truths about the environment in which we're operating.
+\subsubsection{Anonymity}
+Anonymity in the context of isolation games such as the Subway Game describes the ability to arbitrarily permute the parameters of any given utility function without affecting its value.\cite{zhao2008isolation} In this game the only aspect of each player's selection that matters the their opponents is the value, not the order or the ownership. If $P_1$ is 1/3 away from one player and 1/4 away from another, it makes no difference to $P_1$ who has chosen the closer point.
+\subsubsection{Uniformity}
+Uniformity is a property which depends on anonymity. For an anonymous isolation game, it is uniform if the utility functions for all players are equivalent\cite{zhao2008isolation}. This is an assumption we choose to make in the subway game. For any pair of players which are closer to each other than to any other player respectively, we define their distance functions to be equal.
+\subsubsection{Symmetry}
+Though the definition of the Subway Game is given in terms of a real-valued line, the symmetric property of the game dictates that the value of any chosen point alone has no inherent meaning. For example, in the absence of another other pre-existing selections, a player should be equally happy to choose 0 as they would to choose 1, similarly there should be no difference in selecting between 1/4 and 3/4 under no other constraints. These values are on opposite ends of the spectrum, but exhibit the same properties with respect to expected utility.
+
+TODO show that this holds for selecting subsections of equal size. Should that be a separate section?
+\subsubsection{Self-similarity}
+After every non-boundary move, a new delimited line segment is created along $S$. Much like the british coastline\cite{mandelbrot1967long}, each individual segments has the same dynamics as the entire (bounded) unit line.
+
+TODO prove this
+
 
 
 \bibliographystyle{abbrv}
