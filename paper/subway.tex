@@ -109,13 +109,24 @@ Coefficients = {
 To validate the optimality of this model we devised a distance metric to compare arbitrary subway spot selection configurations. To compare the similarity of two sets of passengers' spot selections we simply aggregate the number of passengers sitting in each type of seat. The distance is then the euclidean distance between the vectors of the two seating counts by type. To asses the accuracy of our model we tried to predict real-world results using our model, then measured the distance between our simulation and the actual observed data. In addition to testing our final model we also compared its output against a related, but simpler model that prioritized only sitting and closeness to the door, and a purely random choice function. In addition to being remarkably closer numerically, we can see visually that the linear combination of the 7 components listed above feel more representative of reality than the other algorithms.
 
 \begin{table*}[t]
-  \caption{Predictive algorithm output and distances} \label{tab:compare_algosi}
+  \caption{Predictive algorithm output and their distances from the observed values} \label{tab:compare_algosi}
   \begin{tabular}
       {lll} \hline Algorithm & Distance & Passenger Distribution \\ \hline \\
       \textbf{Random} & \textbf{0.286} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_random}} \\
-      \textbf{Nearest Seat} & \textbf{0.110} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_nearest_seat}} \\
-      \textbf{Avoid People} & \textbf{0.018} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_seat_alone}} \\
+      \textbf{Sit Close} & \textbf{0.110} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_nearest_seat}} \\
+      \textbf{Sit Alone} & \textbf{0.018} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_trip_seat_alone}} \\
       \textbf{Control} & \textbf{0.000} & \parbox[c]{1em}{ \includegraphics[width=400pt]{heatmap_R68_control}} \\
+ \end{tabular}
+\end{table*}
+
+\begin{table*}[b]
+  \caption{Views of interactive exploration tool} \label{tab:inspector}
+  \begin{tabular}
+      {ll}
+      \includegraphics[width=\columnwidth]{layout_view} &
+      \includegraphics[width=\columnwidth]{prediction_view} \\
+      \includegraphics[width=\columnwidth]{values_view} &
+      \includegraphics[width=\columnwidth]{cumulative_view} \\
  \end{tabular}
 \end{table*}
 
