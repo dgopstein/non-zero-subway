@@ -1,7 +1,6 @@
 \documentclass{acm_proc_article-sp}
 
-\usepackage{graphicx}
-\graphicspath{ {images/}, {} }
+\usepackage{tikz}
 
 \begin{document}
 
@@ -20,11 +19,31 @@
 
 \maketitle
 \begin{abstract}
-We introduce the Subway Spot Selection Game, or Subway Game for short, a new continuous kernel sequential location game that gets its name for its similarity to subway seat selection.
+We introduce the Subway Spot Selection Game, or Subway Game for short, a new continuous kernel sequential location game that models the process of selecting a seat on a subway car as it fills up.
 \end{abstract}
 
 \section{Introduction}
-There is a rich history of studying location games as an analogy to economically relevant topics. The Hotelling game\cite{hotelling1990stability}, generally considered the first location game, investigated a duopoly controlled by the price model and one dimensional placement of two firms on a line. More recently this same model has been extended to multiple players\cite{economides1993hotelling}, to non-uniform metric spaces\cite{zhao2008isolation} and even the men's restroom\cite{heufer2011washroom, kranakis2010urinal}
+There is a rich history of studying location games as an analogy to economically relevant topics. The Hotelling game\cite{hotelling1990stability}, generally considered the first location game, investigated a duopoly controlled by the price model and one dimensional placement of two firms on a line. More recently this same model has been extended to multiple players\cite{economides1993hotelling}, to non-uniform metric spaces\cite{zhao2008isolation} and even the men's restroom\cite{heufer2011washroom, kranakis2010urinal}.
+\indent We now shift our attention to another important, yet distinctly different, domain. In the field of Urban Planning, public spaces are created by designers informed by common sense and experimental results, rarely are problems like subway passenger behavior investigated on a theoretical level. We would like to introduce our treatment of this Subway Game to help address the lack of theoretical information available to the designers of public transportation. As an analogy for passengers arranging themselves in a subway car we propose an isolation game on the unit line.
+
+\section{The Subway Game}
+\begin{itemize}
+\item Let $S$ be a real-valued, closed, bounded set between [0, 1]
+\item Let there be an unknown, unbounded number of players $N$
+\item Let there be one stage $t$ for each players $P_i$
+\item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$
+\item After each stage, each player with $i \leq t$ receives payoff $u_i(a_i)$
+\item Let $u_i(a_i)=min(|a_i - a_j|)$ for all $j <  t$ and $j \neq i$
+\item Let $u_1(a_1)=1.0$
+\end{itemize}
+
+\subsection{Example Play}
+The first player in the Subway Game is presented with a blank unit line. Since no other players have chosen any points, $P_i$ is free to play where ever they would like and still receive payoff of $1.0$. Let's imagine $P_i$ choose $a_1=1/2$
+
+\begin{tikzpicture}[scale = 8]
+\filldraw [blue] (1/2,0) circle (.5pt);
+\draw [gray] (0,0) -- (1,0);
+\end{tikzpicture}
 
 \bibliographystyle{abbrv}
 \bibliography{game}
