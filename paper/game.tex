@@ -1,6 +1,10 @@
 \documentclass{acm_proc_article-sp}
 
+\usepackage[usenames, dvipsnames]{color}
 \usepackage{tikz}
+
+\definecolor{lightgray}{gray}{0.9}
+
 
 \newcommand{\startline} {
   \begin{tikzpicture}[scale = 8]
@@ -60,9 +64,26 @@ The first player in the Subway Game is presented with a blank unit line. Since n
 
 $P_1$ receives payoff 1.0 because $u_1(1/3)=u_1(a_1)=1.0$. After the first stage is over, $t = 2$ and player $P_2$ is free to choose any point in S. Let's say $P_2$ chooses to play $1/3$.
 
-\startline \drawpoint{3/4} \drawpoint[blue]{1/3} \stopline
+\startline \drawpoint[blue]{1/3} \drawpoint{3/4} \stopline
 
-After stage $t = 2$ has finished, $P_1$ and $P_2$ both receive a payoff of $u_1(a_1) = u_2(a_2) = |3/4 - 1/3| = 5/12$.
+After stage $t = 2$ has finished, $P_1$ and $P_2$ both receive a payoff of $u_1(a_1) = u_2(a_2) = |3/4 - 1/3| = 5/12$. Now assume one last player plays, and they choose $a_3 = 0$
+
+\startline \drawpoint[blue]{0} \drawpoint{1/3} \drawpoint{3/4} \stopline
+
+After stage $t = 3$ the payoffs go as follows: $u_2(a_2) = u_3(a_3) = |0 - 1/3| = 1/3$ and $P_1$ receives the same payoff as in $t = 2$ $u_1(a_1) = |3/4 - 1/3| = 5/12$
+
+In total each player has received the following utility:
+\begin{description}
+\item[$P_1$:] 1 + 5/12 + 5/12 = 11/6
+\item[$P_2$:] 5/12 + 1/3 = 3/4
+\item[$P_3$:] 1/3 = 1/3
+\end{description}
+
+From this example it is clear that the first two players have quite a bit of regret. For example, assuming $P_2$ and $P_3$ would both make the same choices, but $P_1$ instead chose 1, their second and third payoffs would've both been 2/3 instead of 5/12, and their total utility gain would've been 7/3 instead of 11/6.
+
+\startline \drawpoint{0} \drawpoint{1/3} \drawpoint[lightgray]{3/4} \drawpoint[Green]{1} \stopline
+
+In the following sections we consider an example more geared towards optimality, and then we will investigate a general optimal strategy under certain assumptions.
 
 \subsection{An optimal example}
 
