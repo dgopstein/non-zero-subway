@@ -4,6 +4,12 @@ def u(l, x)
   l*x + (1/2.0)*(u(l*(1-x), x) + u(l*(1-x), 1 - x))
 end
 
+def u2(l, x)
+  return 0 if (l < 0.0001)
+
+  l + x*(1/2.0)*(u(l*(1-x), x) + u(l*(1-x), 1 - x))
+end
+
 def play(x, iter=10)
   line = [1.to_r]
   players = [0.to_r, 1.to_r]

@@ -44,24 +44,24 @@ We introduce the Subway Spot Selection Game, or Subway Game for short, a new con
 \end{abstract}
 
 \section{Introduction}
-There is a rich history of studying location games as an analogy to economically relevant topics. The Hotelling game\cite{hotelling1990stability}, generally considered the first location game, investigated a duopoly controlled by the price model and one dimensional placement of two firms on a line. More recently this same model has been extended to multiple players\cite{economides1993hotelling}, to non-uniform metric spaces\cite{zhao2008isolation} and even the men's restroom\cite{heufer2011washroom, kranakis2010urinal}.
+There is a rich history of studying location games as an analogy to economically relevant topics. The Hotelling game\cite{hotelling1990stability}, generally considered the first location game, investigated a duopoly controlled by adjusting competing prices and one dimensional placement of two firms on a line. More recently this same model has been extended to multiple players\cite{economides1993hotelling}, to non-uniform metric spaces\cite{zhao2008isolation} and even the men's restroom\cite{heufer2011washroom, kranakis2010urinal}.
 \indent We now shift our attention to another important, yet distinctly different, domain. In the field of Urban Planning, public spaces are created by designers informed by common sense and experimental results, rarely are problems like subway passenger behavior investigated on a theoretical level. We would like to introduce our treatment of this Subway Game to help address the lack of theoretical information available to the designers of public transportation. As an analogy for passengers arranging themselves in a subway car we propose an isolation game on the unit line.
 
 \section{The Subway Game}
 \begin{itemize}
 \item Let $S$ be a real-valued, closed, bounded set between [0, 1]
 \item Let there be an unknown, unbounded number N of players $P_1$ up to $P_N$
-\item Let there be one stage $t$ for each players $P_i$
-\item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$ and inserts their choice in configuration $C$
+\item Let there be N stages, one for each time interval $t$ and player $P_i$
+\item On stage $i$, player $P_i$ chooses a point $a_i$ in $S$ and inserts their choice into configuration $C$
 \item After each stage, each player with $i \leq t$ receives payoff $u_i(a_i)$
 \item Let $u_i(a_i) = nearest\_neighbor(a_i, a_{i-1}, a_{i-2}, ...)$
-\item Let $nearest\_neighbor(x, y_1, y_2, ...) = min(\Delta(x, y))$ for all $i$
-\item Where $\Delta(x, y) = |x - y|$
-\item Let $u_1(a_1)=1$
+\item Let $nearest\_neighbor(x, y_1, y_2, ...) = min(\Delta(x, y_1), \Delta(x, y_2), ...)$
+\item Where $\Delta(x, y) = |x - y|$, the 1D euclidean distance measure
+\item Let the first player receive a payoff of 1.0 on their first turn.
 \end{itemize}
 
 \subsection{Example Play}
-The first player in the Subway Game is presented with a blank unit line. Since no other players have chosen any points, $P_i$ is free to play where ever they would like and still receive payoff of $1$. Let's imagine $P_i$ chooses $a_1=3/4$
+The first player in the Subway Game is presented with a blank unit line. Since no other players have chosen any points, $P_1$ is free to play where ever they would like and still receive payoff of $1$. Let's imagine $P_1$ chooses $a_1=3/4$
 
 \startline \drawpoint[blue]{3/4} \stopline
 
@@ -90,11 +90,11 @@ In the following sections we consider an example more geared towards optimality,
 
 \subsection{An Optimal Example}
 
-Now we will look at a second game, one where each of the players has learned from mistakes in the first game. As we saw at the end of the last section, in order to minimize historical regret $P_i$ should choose $a_i=1$, in fact, for reasons we will show later, this is always an optimal action for the first player.
+Now we will look at a second round of the Subway Game, one where each of the players has learned from mistakes in the first game. As we saw at the end of the last section, in order to minimize historical regret $P_1$ should choose $a_1=1$, in fact, for reasons we will show later, this is always an optimal action for the first player.
 
 \startline \drawpoint[blue]{1} \stopline
 
-Next, $P_2$, feeling more compelled to respond well, decides that they can do better than their choice of 1/3 in the first game. $P_2$ recognizes that in terms of the $t = 2$ payoff and choice $a_2 > 1/3$ would decrease $u_2$ and any $a_2 < 1/3$ would increase it. On the other hand, a choice of $a_2 < 1/3$ would decrease the distance (and therefore payoff) for $P_2$ in stage $t = 3$ if $P_3$ were to make the decision to play 0 again. However, $P_2$ intuits that if they were to play $a_2 = 0$ they could get the best of both worlds, they would receive $u_2(0) = 1$ this turn, and while its not obvious where $P_3$ would play, its clear that $P_3$ would have no incentive to play the same point as $P_2$. So $P_2$ plays $a_2 = 0$ and hopes for the best in $t = 3$. It turns out that this too is an optimal play for $P_2$ for a similar reason that $a_1 = 1$ was.
+Next, $P_2$, feeling more compelled to respond well, decides that they can do better than their choice of 1/3 in the first game. $P_2$ recognizes that in terms of the stage $t = 2$, any $a_2 > 1/3$ would decrease $u_2$ and any $a_2 < 1/3$ would increase it. On the other hand, a choice of $a_2 < 1/3$ would decrease the distance (and therefore payoff) for $P_2$ in stage $t = 3$ if $P_3$ were to make the decision to play 0 again. However, $P_2$ intuits that if they were to play $a_2 = 0$ they could get the best of both worlds, they would receive $u_2(0) = 1$ this turn, and while its not obvious where $P_3$ would play, its clear that $P_3$ would have no incentive to play the same point as $P_2$. So $P_2$ plays $a_2 = 0$ and hopes for the best in $t = 3$. It turns out that this too is an optimal play for $P_2$ for a similar reason that $a_1 = 1$ was.
 
 \startline \drawpoint[blue]{0} \drawpoint{1} \stopline
 
@@ -115,22 +115,22 @@ In closing, it is interesting to note that in addition to having improved the to
 Before we go on to prove claims about individual strategies, we must first establish some truths about the environment in which we're operating.
 
 \subsubsection{Anonymity}
-Anonymity in the context of isolation games such as the Subway Game describes the ability to arbitrarily permute the parameters of any given utility function without affecting its value.\cite{zhao2008isolation} In this game the only aspect of each player's selection that matters the their opponents is the value, not the order or the ownership. If $P_1$ is 1/3 away from one player and 1/4 away from another, it makes no difference to $P_1$ who has chosen the closer point. More rigorously, anonymity implies $nearest\_neighbor(x, y, z) = nearest\_neighbor(x, z, y)$
+Anonymity in the context of isolation games such as the Subway Game describes the ability to arbitrarily permute the parameters of any given utility function without affecting its value\cite{zhao2008isolation}. In this game the only aspect of each player's selection that matters to their opponents is the value, not the order or the ownership. If $P_1$ is 1/3 away from one player and 1/4 away from another, it makes no difference to $P_1$ who has chosen the closer point. More rigorously, anonymity implies $nearest\_neighbor(x, y, z) = nearest\_neighbor(x, z, y)$ for all $x, y, z$.
 
 \subsubsection{Uniformity}
 Uniformity is a property which depends on anonymity. For an anonymous isolation game, it is uniform if the utility functions for all players are equivalent\cite{zhao2008isolation}. This is an assumption we choose to make in the subway game. Each player values a given point equally, $u_i(x) = u_j(x)$ for all $i, j$.
 
 \subsubsection{Symmetry}
-Though the definition of the Subway Game is given in terms of a real-valued line, the symmetric property of the game dictates that the value of any chosen point alone has no inherent meaning. For example, in the absence of pre-existing selections, a player should be equally happy to choose 0 as they would to choose 1, similarly there should be no difference in selecting between 1/4 and 3/4 under no other constraints. These values are on opposite ends of the spectrum, but exhibit the same properties with respect to expected utility. In general $nearest\_neighbor(x, 0, 1) = nearest\_neighbor(1 - x, 0, 1)$.
+Though the definition of the Subway Game is given in terms of a real-valued line, the symmetric property of the game dictates that the value of any chosen point alone has no inherent meaning. For example, in the absence of pre-existing selections, a player should be equally happy to choose 0 as they would to choose 1, similarly there should be no difference in selecting between 1/4 and 3/4 under no other constraints. These values are on opposite ends of the spectrum, but exhibit the same properties with respect to expected utility. In general, $\Delta(x, y) = \Delta(y, x)$ and $nearest\_neighbor(x, 0, 1) = nearest\_neighbor(1 - x, 0, 1)$.
 
 \subsubsection{Sectional Indestinguishability}
-For two delimited sections of equal size, bounded by $[y_1, y_2]$ and $[z_1, z_2]$ such that $\Delta(y_1, y_2) = \Delta(z_1, z_2)$ a player $P_i$ should have no preference between the two. For all $a$ such that $y_1 < a < y_2$ there exists a $b$ such that $nearest\_neighbor(a, y_1, y_2) = nearest\_neighbor(b, z_1, z_2)$
+For two enclosed (terminated by selected points) sections of equal size, bounded by $[y_1, y_2]$ and $[z_1, z_2]$ such that $\Delta(y_1, y_2) = \Delta(z_1, z_2)$ a player $P_i$ should have no preference between the two. For all $a$ such that $y_1 < a < y_2$ there exists a $b$ such that $nearest\_neighbor(a, y_1, y_2) = nearest\_neighbor(b, z_1, z_2)$
 
 \subsubsection{Closure}
 A point $x$ between two other points, $y_1, y_2$ where $y_1 < y_2$ is said to be closed over by those two points. It can never be affected by any point below the lower boundary or above the upper. Since the utility function is defined in terms of nearest neighbor which is in turn defined by absolute distance, any point $z$ which $z \leq y_1$ or $z \geq y_2$ implies $\Delta(x, z) \geq \Delta(x, y_1)$ or $\Delta(x, z) \geq \Delta(x, y_2)$ and therefore $nearest\_neighbor(x, y_1, y_2, z) \leq nearest\_neighbor(x, z)$
 
 \subsubsection{Self-similarity}
-After every non-boundary move, a new delimited line segment is created along $S$. Much like the british coastline\cite{mandelbrot1967long}, each individual segments has the same dynamics as the entire (enclosed) unit line. For any two uninterrupted segments along the line (including the entire unit line itself), $v$ and $w$ there exists a linear mapping between the two.
+After every non-boundary move, a new enclosed line segment is created along $S$. Much like the british coastline\cite{mandelbrot1967long}, each individual segment has the same dynamics as the entire (enclosed) unit line. For any two uninterrupted segments along the line (including the entire unit line itself), $v$ and $w$ there exists a linear mapping between the two.
 
 \section{Properties of the Rational Passenger}
 In the environment of the of the Subway Game we can make general statements about how a rational player should perceive and react to specific phenomena in the game.
@@ -145,7 +145,7 @@ A rational player will never choose to play the same action as an existing playe
 \startline[1/3] \drawpoint{0} \drawpoint{1} \stopline \\\\
 \startline[2/3] \drawpoint{0} \drawpoint{1} \stopline
 
-Given the symmetry and anonymity properties of the game there should be no preference to choose one segment over the other based solely on their locations in $S$. This result is confirmed by the property of indistinguishability of equal length segments. When segments are not the same size, however, there should be a clear preference for any rational player to choose to play in the larger segment. Due to the self-similarity property of segments we can see that many properties of segments still hold. Closure, for instance is still valid, when a player decides to play in one segment, they can not be effected by actions that occur in the other segments. The only property that changes with respect to segment size is the distance metric $\Delta$, which scales linearly with the absolute size of the segment. Consider the following example where a player who only ever plays at 3/4 of the segment they chose to play in. When they try to decide between the two segments above, they consider their two option:
+Given the symmetry and anonymity properties of the game there should be no preference to choose one segment over the other based solely on their locations in $S$. This result is confirmed by the property of indistinguishability of equal length segments. When segments are not the same size, however, there should be a clear preference for any rational player to choose to play in the larger segment. Due to the self-similarity property of segments we can see that many properties of segments still hold. Closure, for instance is still valid, when a player decides to play in one segment, they can not be effected by actions that occur in the other segments. The only property that changes with respect to segment size is the distance metric $\Delta$, which scales linearly with the absolute size of the segment. Consider the following example with a player who always selects a point at 3/4 of the their chosen segment. When they try to decide between the two segments above, they consider their two option:
 
 \startline[1/3] \drawpoint{0} \drawpoint[blue]{3/4} \drawpoint{1} \stopline \\\\
 \startline[2/3] \drawpoint{0} \drawpoint[blue]{3/4} \drawpoint{1} \stopline
@@ -159,7 +159,7 @@ Since the Subway game is played on a infinite and bounded action space a discont
 
 \startline \drawpoint[blue]{0} \drawpoint[blue]{1} \stopline
 
-After both edges are selected, the rest of the game can be analyzed homogeneously, the strategies that work in the beginning will continue to work throughout. At this point, there is one un-broken section in which $P_3$ can select their action from, specifically any value $(0, 1)$ is a rational choice in that it offers a definite, positive, payoff\cite{perea2012epistemic}. Before we consider which choice is \textit{best} for $P_3$ let's consider the effect of their choice on the next player. Given the notion of rational proportional dominance, know that a rational player will prefer to play in the larger segment. Using the property of symmetry we can force our player to choose an action $x$ such that $x \leq 1/2$ with no loss of generality. When we consider the actions of the following players, however, their indifference over symmetry does not carry over the player of this round, $\Delta(0, x) \neq \Delta(0, 1-x)$, in this scenario we consider only the average case, where all following players choose between $a_i \leq 0$ and $a_i \geq 1/2$ with even probability. Under these constraints we can formulate the infinite horizon utility of a certain action as:
+After both edges are selected, the rest of the game can be analyzed homogeneously, the strategies that work in the beginning will continue to work throughout. At this point, there is one un-broken section in which $P_3$ can select their action from, specifically any value in $(0, 1)$ is a rational choice in that it offers an immediate positive payoff\cite{perea2012epistemic}. Before we consider which choice is \textit{best} for $P_3$ let's consider the effect of their choice on the next player. Given the notion of rational proportional dominance, we know that a rational player will prefer to play in the larger segment. Using the property of symmetry we can force our player to choose an action $x$ such that $x \leq 1/2$ with no loss of generality. When we consider the actions of the following players, however, their indifference over symmetry does not carry over the player of this round, $\Delta(0, x) \neq \Delta(0, 1-x)$, in this scenario we consider only the average case, where all following players choose between $a_i \leq 0$ and $a_i \geq 1/2$ with even probability. Under these constraints we can formulate the infinite horizon utility of a certain action as:
 
 \begin{equation}
 \mu(x) = x + (x + (1 - x))(1/2)(\mu(x) + \mu(1-x))
