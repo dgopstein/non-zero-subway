@@ -2,7 +2,7 @@
 
 require 'pp'
 
-DB_DIR = '/Users/dgopstein/nyu/subway/db/'
+DB_DIR = Dir.pwd+'/db/'
 
 def ci; $ci ||= CarImporter.new(DB_DIR+'LOOKUP_TBL.csv'); end
 def si; $si ||= StopImporter.new(DB_DIR+'FORM_TBL.csv'); end

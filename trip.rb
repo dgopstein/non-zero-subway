@@ -1,6 +1,6 @@
 require 'csv_importer.rb'
 require 'facets'
-require 'lib/deep_enumerable/lib/deep_enumerable.rb'
+#require 'lib/deep_enumerable/lib/deep_enumerable.rb'
 
 Stop = Struct.new(:id, :date, :from, :to, :lv_time, :arr_time, :car_class, :line, :form_dir, :occupancy)
 
